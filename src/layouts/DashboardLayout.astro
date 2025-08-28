@@ -1,0 +1,231 @@
+---
+import "../styles/global.css";
+
+const role = Astro.cookies.get('sb-role')?.value ?? '';
+
+---
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Dashboard</title>
+  </head>
+  <body class="h-screen w-screen bg-gray-100">
+    <div class="flex h-screen">
+      <!-- Sidebar -->
+      <aside class="w-64 bg-blue-500 text-white flex flex-col p-6">
+        <div class="bg-white border-black border-2 rounded-2xl mb-4">
+          <img src="/src/assets/compower-logo.png" />
+        </div>
+        <div class="mb-4 text-center text-blue-200 font-bold text-lg">
+          Rol: {role}
+        </div>
+        <nav class="flex-1">
+          <ul class="space-y-2">
+            <div><h1> el rol es {console.log(role)}</h1></div>
+            {role === 'admin' && (
+              <>
+                <li>
+                  <a
+                    href="/Module-start/dashboard"
+                    class="hover:text-blue-300 flex items-center gap-2"
+                  >
+                    <span>🏠</span> Inicio
+                  </a>
+                </li>
+                <li class="group">
+                  <button
+                    type="button"
+                    class="flex items-center w-full hover:text-blue-300 focus:outline-none"
+                    onclick="this.nextElementSibling.classList.toggle('hidden')"
+                  >
+                    <span>📦</span> Inventario
+                    <svg
+                      class="ml-auto w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      viewBox="0 0 24 24"
+                      ><path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M19 9l-7 7-7-7"></path></svg
+                    >
+                  </button>
+                  <ul
+                    class="ml-6 mt-1 hidden bg-blue-400 rounded group-hover:block"
+                  >
+                    <li>
+                      <a href="/Module-Inventory/inventory?tipo=activo&sede=surco" class="block py-1 px-2 hover:text-blue-200"
+                        >Activos (Surco)</a>
+                    </li>
+                    <li>
+                      <a href="/Module-Inventory/inventory?tipo=material&sede=surco" class="block py-1 px-2 hover:text-blue-200"
+                        >Materiales (Surco)</a>
+                    </li>
+                    <li>
+                      <a href="/Module-Inventory/inventory?tipo=herramienta&sede=surco" class="block py-1 px-2 hover:text-blue-200"
+                        >Herramientas (Surco)</a>
+                    </li>
+                    <li>
+                      <a href="/Module-Inventory/inventory?tipo=activo&sede=cusco" class="block py-1 px-2 hover:text-blue-200"
+                        >Activos (Cusco)</a>
+                    </li>
+                    <li>
+                      <a href="/Module-Inventory/inventory?tipo=material&sede=cusco" class="block py-1 px-2 hover:text-blue-200"
+                        >Materiales (Cusco)</a>
+                    </li>
+                    <li>
+                      <a href="/Module-Inventory/inventory?tipo=herramienta&sede=cusco" class="block py-1 px-2 hover:text-blue-200"
+                        >Herramientas (Cusco)</a>
+                    </li>
+                  </ul>
+                </li>
+                <li>
+                  <a
+                    href="/Module-cashier/cashier"
+                    class="hover:text-blue-300 flex items-center gap-2"
+                  >
+                    <span>💰</span> Caja
+                  </a>
+                </li>
+                <li class="group">
+                  <button
+                    type="button"
+                    class="flex items-center w-full hover:text-blue-300 focus:outline-none"
+                    onclick="this.nextElementSibling.classList.toggle('hidden')"
+                  >
+                    <span>📍</span> Sede
+                    <svg
+                      class="ml-auto w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      viewBox="0 0 24 24"
+                      ><path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M19 9l-7 7-7-7"></path></svg
+                    >
+                  </button>
+                  <ul
+                    class="ml-6 mt-1 hidden bg-blue-400 rounded group-hover:block"
+                  >
+                    <li>
+                      <a href="/Module-Inventory/inventory?sede=surco" class="block py-1 px-2 hover:text-blue-200"
+                        >Surco</a>
+                    </li>
+                    <li>
+                      <a href="/Module-Inventory/inventory?sede=cusco" class="block py-1 px-2 hover:text-blue-200"
+                        >Cusco</a>
+                    </li>
+                  </ul>
+                </li>
+              </>
+            )}
+            {role === 'cashier' && (
+              <li>
+                <a
+                  href="/Module-cashier/cashier"
+                  class="hover:text-blue-300 flex items-center gap-2"
+                >
+                  <span>💰</span> Caja
+                </a>
+              </li>
+            )}
+            {role === 'logistics' && (
+              <li class="group">
+                <button
+                  type="button"
+                  class="flex items-center w-full hover:text-blue-300 focus:outline-none"
+                  onclick="this.nextElementSibling.classList.toggle('hidden')"
+                >
+                  <span>📦</span> Inventario
+                  <svg
+                    class="ml-auto w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    ><path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M19 9l-7 7-7-7"></path></svg
+                  >
+                </button>
+                <ul
+                  class="ml-6 mt-1 hidden bg-blue-400 rounded group-hover:block"
+                >
+                  <li>
+                    <a href="#" class="block py-1 px-2 hover:text-blue-200"
+                      >Activos</a>
+                  </li>
+                  <li>
+                    <a href="#" class="block py-1 px-2 hover:text-blue-200"
+                      >Materiales</a>
+                  </li>
+                  <li>
+                    <a href="#" class="block py-1 px-2 hover:text-blue-200"
+                      >Herramientas</a>
+                  </li>
+                </ul>
+              </li>
+            )}
+          </ul>
+        </nav>
+
+        <!-- Card de usuario – azul oscuro -->
+        <div
+          class="w-full rounded-xl bg-slate-900 text-blue-100 px-3 py-3 flex items-center justify-between ring-1 ring-blue-800/50 shadow-sm"
+        >
+          <!-- Avatar + nombre -->
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="relative">
+              <img
+                src="https://i.pravatar.cc/80?img=5"
+                alt="Avatar"
+                class="h-10 w-10 rounded-full object-cover ring-2 ring-blue-700/40"
+              />
+              <!-- estado -->
+              <span
+                class="absolute -bottom-0 -right-0 block h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-slate-900"
+              ></span>
+            </div>
+
+            <div class="min-w-0">
+              <p class="text-sm font-medium text-blue-50 truncate">Pablita</p>
+              <p class="text-xs text-blue-300/80 truncate">@{role}</p>
+            </div>
+          </div>
+
+          <!-- Botón Cerrar sesión -->
+          <form action="/api/Auth/signout" method="get">
+            <button
+              class="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-full bg-blue-900/40 ring-1 ring-blue-700/60 hover:bg-blue-800/70 hover:ring-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/80"
+            >
+              <!-- Icono logout (SVG inline) -->
+              <svg
+                class="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                <path d="M10 17l5-5-5-5"></path>
+                <path d="M15 12H3"></path>
+              </svg>
+            </button>
+          </form>
+        </div>
+      </aside>
+      <!-- Contenido principal -->
+      <main class="flex-1 p-8 overflow-auto">
+        <slot />
+      </main>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,37 @@
+---
+import DashboardLayout from "../../layouts/DashboardLayout.astro";
+import Inventario from "../../components/inventario/inventario.astro";
+import { supabase } from "../../lib/supabase/SupabaseClient";
+
+const { cookies, redirect } = Astro;
+
+const accessToken = cookies.get("sb-access-token");
+const refreshToken = cookies.get("sb-refresh-token");
+
+if (!accessToken || !refreshToken) {
+  return redirect("/Module-start/signin");
+}
+
+const { data, error } = await supabase.auth.setSession({
+  refresh_token: refreshToken.value,
+  access_token: accessToken.value,
+});
+
+if (error) {
+  cookies.delete("sb-access-token", {
+    path: "/",
+  });
+  cookies.delete("sb-refresh-token", {
+    path: "/",
+  });
+
+  return redirect("Module-start/signin");
+}
+
+const email = data?.user?.email;
+---
+<DashboardLayout title="panel de control">
+      <h1>Bienvenido {email}</h1>
+  <p>Estamos felices de verte aquí</p>
+
+<Inventario />

@@ -1,0 +1,324 @@
+---
+import "../../styles/global.css";
+import DashboardLayout from "../../layouts/DashboardLayout.astro";
+import { supabase } from "../../lib/supabase/SupabaseClient";
+
+import {
+  listInventario,
+  money,
+  subtotal,
+  type Tipo,
+} from "../../pages/api/inventario/get.ts";
+
+const tipo = (Astro.url.searchParams.get("tipo") ?? "material") as Tipo;
+const sede = (Astro.url.searchParams.get("sede") ?? "surco").toLowerCase();
+const page = Number(Astro.url.searchParams.get("page") ?? 1);
+const pageSize = 10;
+const search = Astro.url.searchParams.get("search")?.toLowerCase() ?? "";
+const searchBy = Astro.url.searchParams.get("searchBy") ?? "nombre";
+const categoriaFiltro = Astro.url.searchParams.get("categoria") ?? "";
+
+let rows: any[] = [];
+try {
+  rows = await listInventario({ tipo, sede });
+} catch (e) {
+  console.error(e);
+  rows = [];
+}
+
+// Normalizar categorías vacías
+rows = rows.map(r => ({ ...r, categoria: r.categoria?.trim() || "sin categoria" }));
+
+// Filtrar por búsqueda
+let filteredRows = rows;
+if (search) {
+  filteredRows = filteredRows.filter(r => {
+    if (searchBy === "codigo") return (r.codigo || "").toLowerCase().includes(search);
+    return (r.nombre || "").toLowerCase().includes(search);
+  });
+}
+// Filtrar por categoría
+if (categoriaFiltro) {
+  filteredRows = filteredRows.filter(r => (r.categoria || "sin categoria") === categoriaFiltro);
+}
+
+// Obtener categorías únicas para el filtro
+const categoriasUnicas = Array.from(new Set(rows.map(r => r.categoria || "sin categoria")));
+
+const totalRows = filteredRows.length;
+const totalPages = Math.ceil(totalRows / pageSize);
+const paginatedRows = filteredRows.slice((page - 1) * pageSize, page * pageSize);
+---
+
+
+<div class="mb-4 flex flex-col md:flex-row md:items-center md:gap-4 gap-2">
+  <div class="flex gap-2">
+    {(["material", "herramienta", "activo"] as Tipo[]).map((t) => (
+      <a
+        href={`?tipo=${t}&sede=${sede}`}
+        class={`px-3 py-1 rounded border ${t === tipo ? "bg-slate-900 text-white" : "bg-white hover:bg-slate-50"}`}
+      >
+        {t[0].toUpperCase() + t.slice(1)}
+      </a>
+    ))}
+  </div>
+  <form method="get" class="flex gap-2 flex-wrap items-center">
+    <input type="hidden" name="tipo" value={tipo} />
+    <input type="hidden" name="sede" value={sede} />
+    <input type="hidden" name="page" value={1} />
+    <input
+      type="text"
+      name="search"
+      value={search}
+      placeholder="Buscar..."
+      class="border rounded px-2 py-1"
+    />
+    <select name="searchBy" class="border rounded px-2 py-1">
+      <option value="nombre" selected={searchBy === "nombre"}>Nombre</option>
+      <option value="codigo" selected={searchBy === "codigo"}>Código</option>
+    </select>
+    <select name="categoria" class="border rounded px-2 py-1">
+      <option value="">Todas las categorías</option>
+      {categoriasUnicas.map(cat => (
+        <option value={cat} selected={categoriaFiltro === cat}>{cat}</option>
+      ))}
+    </select>
+    <button type="submit" class="px-3 py-1 bg-blue-600 text-white rounded">Filtrar</button>
+  </form>
+</div>
+
+
+<script type="module" src="/src/components/inventario/inventario-modal.js"></script>
+
+<div class="overflow-x-auto rounded-lg border">
+  <table class="border-collapse border border-gray-300 w-full">
+    <thead>
+      <tr>
+        <th class="border border-gray-300">CODIGO</th>
+        <th class="border border-gray-300">NOMBRE</th>
+        <th class="border border-gray-300">CATEGORIA</th>
+        <th class="border border-gray-300">UNIDAD DE MEDIDA</th>
+        <th class="border border-gray-300">CANTIDAD</th>
+        <th class="border border-gray-300">VALOR UNITARIO</th>
+        <th class="border border-gray-300">SUBTOTAL</th>
+        <th colspan="3" class="border border-gray-300">ACCION</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {
+        paginatedRows.length === 0 ? (
+          <tr>
+            <td colspan="10" class="border p-4 text-center text-slate-500">
+              No hay registros en {tipo}.
+            </td>
+          </tr>
+        ) : (
+          paginatedRows.map((r: any) => (
+            <tr class="hover:bg-slate-50">
+              <td class="border p-2">{r.codigo}</td>
+              <td class="border p-2">{r.nombre}</td>
+              <td class="border p-2">{r.categoria ?? "-"}</td>
+              <td class="border p-2">{r.unid_med ?? "-"}</td>
+              <td class="border p-2 text-right">{Number(r.cantidad ?? 0)}</td>
+              <td class="border p-2 text-right">{money(r.valor_unitario)}</td>
+              <td class="border p-2 text-right">{money(subtotal(r))}</td>
+              <td class="border p-2 text-center">
+                <button
+                  class="underline text-blue-600"
+                  onclick={`import('/src/components/inventario/inventario-modal.js').then(m => m.openEditModal(${JSON.stringify({ ...r, tipo })}))`}
+                >
+                  Editar
+                </button>
+              </td>
+              <td class="border p-2 text-center">
+                <button
+                  class="underline text-red-600"
+                  onclick={`import('/src/components/inventario/inventario-modal.js').then(m => m.openDeleteModal(${JSON.stringify({ ...r, tipo })}))`}
+                >
+                  Eliminar
+                </button>
+              </td>
+              <td class="border p-2 text-center">
+                <button
+                  class="underline text-green-700"
+                  type="button"
+                  onclick={`import('/src/components/inventario/inventario-modal.js').then(m => m.openTransferModal(${JSON.stringify({ ...r, tipo, sede })}))`}
+                >
+                  Transferir
+                </button>
+              </td>
+            </tr>
+          ))
+        )
+      }
+    </tbody>
+  </table>
+</div>
+
+<!-- Paginación -->
+{totalPages > 1 && (
+  <div class="flex justify-center items-center gap-2 mt-4">
+    <a
+      href={`?tipo=${tipo}&sede=${sede}&page=${page - 1}`}
+      class={`px-3 py-1 rounded border ${page === 1 ? 'pointer-events-none opacity-50' : 'bg-white hover:bg-slate-50'}`}
+      aria-disabled={page === 1}
+    >Anterior</a>
+    {Array.from({ length: totalPages }, (_, i) => (
+      <a
+        href={`?tipo=${tipo}&sede=${sede}&page=${i + 1}`}
+        class={`px-3 py-1 rounded border ${page === i + 1 ? 'bg-slate-900 text-white' : 'bg-white hover:bg-slate-50'}`}
+      >
+        {i + 1}
+      </a>
+    ))}
+    <a
+      href={`?tipo=${tipo}&sede=${sede}&page=${page + 1}`}
+      class={`px-3 py-1 rounded border ${page === totalPages ? 'pointer-events-none opacity-50' : 'bg-white hover:bg-slate-50'}`}
+      aria-disabled={page === totalPages}
+    >Siguiente</a>
+  </div>
+)}
+
+<!-- Modales fuera del contenedor de la tabla -->
+<div id="transfer-modal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 hidden animate-fade-in">
+  <form class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg border-2 border-green-400 relative animate-fade-in" onsubmit="import('/src/components/inventario/inventario-modal.js').then(m => m.submitTransferForm(event))">
+    <div class="modal-success"></div>
+    <h2 class="text-xl font-bold mb-4 text-green-700 text-center">Transferir Inventario</h2>
+    <input type="hidden" id="transfer-id" name="transfer-id" />
+    <input type="hidden" id="transfer-tipo" name="transfer-tipo" />
+    <input type="hidden" id="transfer-sede-origen" name="transfer-sede-origen" />
+    <div class="mb-3">
+      <label class="block text-sm font-semibold mb-1">Nombre</label>
+      <input type="text" id="transfer-nombre" name="transfer-nombre" class="border w-full rounded px-2 py-1 bg-gray-100" readonly />
+    </div>
+    <div class="mb-3">
+      <label class="block text-sm font-semibold mb-1">Cantidad a transferir</label>
+      <input type="number" id="transfer-cantidad" name="transfer-cantidad" class="border w-full rounded px-2 py-1" min="1" required />
+    </div>
+    <div class="mb-3">
+      <label class="block text-sm font-semibold mb-1">Almacén destino</label>
+      <select id="transfer-sede-destino" name="transfer-sede-destino" class="border w-full rounded px-2 py-1" required>
+        <option value="">Selecciona un almacén</option>
+        <option value="surco">Surco</option>
+        <option value="cusco">Cusco</option>
+      </select>
+    </div>
+    <div class="flex gap-2 justify-end mt-6">
+      <button type="button" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400" onclick="import('/src/components/inventario/inventario-modal.js').then(m => m.closeModal('transfer-modal'))">Cancelar</button>
+      <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Confirmar traslado</button>
+    </div>
+  </form>
+</div>
+
+<div id="edit-modal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 hidden animate-fade-in">
+  <form class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg border-2 border-blue-400 relative animate-fade-in" onsubmit="import('/src/components/inventario/inventario-modal.js').then(m => m.submitEditForm(event))">
+    <div class="modal-success"></div>
+    <h2 class="text-xl font-bold mb-4 text-blue-700 text-center">Editar Inventario</h2>
+    <input type="hidden" id="edit-id" name="edit-id" />
+    <input type="hidden" id="edit-tipo" name="edit-tipo" />
+    <div class="mb-3">
+      <label class="block text-sm font-semibold mb-1">Código</label>
+      <input type="text" id="edit-codigo" name="edit-codigo" class="border w-full rounded px-2 py-1 focus:ring-2 focus:ring-blue-300" required />
+    </div>
+    <div class="mb-3">
+      <label class="block text-sm font-semibold mb-1">Nombre</label>
+      <input type="text" id="edit-nombre" name="edit-nombre" class="border w-full rounded px-2 py-1 focus:ring-2 focus:ring-blue-300" required />
+    </div>
+    <div class="mb-3">
+      <label class="block text-sm font-semibold mb-1">Categoría</label>
+      <input type="text" id="edit-categoria" name="edit-categoria" class="border w-full rounded px-2 py-1" />
+    </div>
+    <div class="mb-3">
+      <label class="block text-sm font-semibold mb-1">Unidad de Medida</label>
+      <input type="text" id="edit-unid_med" name="edit-unid_med" class="border w-full rounded px-2 py-1" />
+    </div>
+    <div class="mb-3">
+      <label class="block text-sm font-semibold mb-1">Cantidad</label>
+      <input type="number" id="edit-cantidad" name="edit-cantidad" class="border w-full rounded px-2 py-1" min="0" step="1" required />
+    </div>
+    <div class="mb-3">
+      <label class="block text-sm font-semibold mb-1">Valor Unitario</label>
+      <input type="number" id="edit-valor_unitario" name="edit-valor_unitario" class="border w-full rounded px-2 py-1" min="0" step="0.01" required />
+    </div>
+    <div class="flex gap-2 justify-end mt-6">
+      <button type="button" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400" onclick="import('/src/components/inventario/inventario-modal.js').then(m => m.closeModal('edit-modal'))">Cancelar</button>
+      <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Guardar</button>
+    </div>
+  </form>
+</div>
+
+<div id="delete-modal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 hidden animate-fade-in">
+  <form class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg border-2 border-red-400 relative animate-fade-in" onsubmit="import('/src/components/inventario/inventario-modal.js').then(m => m.submitDeleteForm(event))">
+    <div class="modal-success"></div>
+    <input type="hidden" id="delete-id" name="delete-id" />
+    <input type="hidden" id="delete-tipo" name="delete-tipo" />
+    <h2 class="text-xl font-bold mb-4 text-red-700 text-center">¿Seguro que deseas eliminar <span id="delete-nombre" class="font-semibold"></span>?</h2>
+    <div class="flex gap-2 justify-end mt-6">
+      <button type="button" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400" onclick="import('/src/components/inventario/inventario-modal.js').then(m => m.closeModal('delete-modal'))">Cancelar</button>
+      <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Eliminar</button>
+    </div>
+  </form>
+</div>
+
+<!-- Modal Editar -->
+<div id="edit-modal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 hidden animate-fade-in">
+  <form class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg border-2 border-blue-400 relative animate-fade-in" onsubmit="import('/src/components/inventario/inventario-modal.js').then(m => m.submitEditForm(event))">
+    <div class="modal-success"></div>
+    <h2 class="text-xl font-bold mb-4 text-blue-700 text-center">Editar Inventario</h2>
+    <input type="hidden" id="edit-id" name="edit-id" />
+    <input type="hidden" id="edit-tipo" name="edit-tipo" />
+    <div class="mb-3">
+      <label class="block text-sm font-semibold mb-1">Código</label>
+      <input type="text" id="edit-codigo" name="edit-codigo" class="border w-full rounded px-2 py-1 focus:ring-2 focus:ring-blue-300" required />
+    </div>
+    <div class="mb-3">
+      <label class="block text-sm font-semibold mb-1">Nombre</label>
+      <input type="text" id="edit-nombre" name="edit-nombre" class="border w-full rounded px-2 py-1 focus:ring-2 focus:ring-blue-300" required />
+    </div>
+    <div class="mb-3">
+      <label class="block text-sm font-semibold mb-1">Categoría</label>
+      <input type="text" id="edit-categoria" name="edit-categoria" class="border w-full rounded px-2 py-1" />
+    </div>
+    <div class="mb-3">
+      <label class="block text-sm font-semibold mb-1">Unidad de Medida</label>
+      <input type="text" id="edit-unid_med" name="edit-unid_med" class="border w-full rounded px-2 py-1" />
+    </div>
+    <div class="mb-3">
+      <label class="block text-sm font-semibold mb-1">Cantidad</label>
+      <input type="number" id="edit-cantidad" name="edit-cantidad" class="border w-full rounded px-2 py-1" min="0" step="1" required />
+    </div>
+    <div class="mb-3">
+      <label class="block text-sm font-semibold mb-1">Valor Unitario</label>
+      <input type="number" id="edit-valor_unitario" name="edit-valor_unitario" class="border w-full rounded px-2 py-1" min="0" step="0.01" required />
+    </div>
+    <div class="flex gap-2 justify-end mt-6">
+      <button type="button" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400" onclick="import('/src/components/inventario/inventario-modal.js').then(m => m.closeModal('edit-modal'))">Cancelar</button>
+      <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Guardar</button>
+    </div>
+  </form>
+</div>
+
+<!-- Modal Eliminar -->
+<div id="delete-modal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 hidden animate-fade-in">
+  <form class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg border-2 border-red-400 relative animate-fade-in" onsubmit="import('/src/components/inventario/inventario-modal.js').then(m => m.submitDeleteForm(event))">
+    <div class="modal-success"></div>
+    <input type="hidden" id="delete-id" name="delete-id" />
+    <input type="hidden" id="delete-tipo" name="delete-tipo" />
+    <h2 class="text-xl font-bold mb-4 text-red-700 text-center">¿Seguro que deseas eliminar <span id="delete-nombre" class="font-semibold"></span>?</h2>
+    <div class="flex gap-2 justify-end mt-6">
+      <button type="button" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400" onclick="import('/src/components/inventario/inventario-modal.js').then(m => m.closeModal('delete-modal'))">Cancelar</button>
+      <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Eliminar</button>
+    </div>
+  </form>
+</div>
+
+<style>
+@keyframes fade-in {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-fade-in {
+  animation: fade-in 0.3s ease;
+}
+</style>
