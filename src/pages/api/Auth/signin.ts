@@ -30,6 +30,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
 
   // Obtener el rol del usuario desde la tabla user_roles
   let userRole = null;
+  let username = null;
   if (user?.id) {
     const { data: roleData, error: roleError } = await supabase
       .from('user_roles')
@@ -44,6 +45,22 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
         sameSite: 'lax',
         maxAge: 60 * 60 * 24 * 7,
       });
+
+      const { data: userData, error: userError } = await supabase
+      .from('user_roles')
+      .select('user_name')
+      .eq('user_id', user.id)
+      .single();
+
+      if (userData && userData.user_name) {
+        username = userData.user_name;
+        cookies.set('sb-username', username, {
+          path: '/',
+          httpOnly: true,
+          sameSite: 'lax',
+          maxAge: 60 * 60 * 24 * 7,
+        });
+      }
     }
   }
   return redirect("/Module-start/dashboard");

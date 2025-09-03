@@ -2,6 +2,7 @@
 import "../styles/global.css";
 
 const role = Astro.cookies.get('sb-role')?.value ?? '';
+const username = Astro.cookies.get('sb-username')?.value ?? '';
 
 ---
 <html lang="es">
@@ -22,7 +23,6 @@ const role = Astro.cookies.get('sb-role')?.value ?? '';
         </div>
         <nav class="flex-1">
           <ul class="space-y-2">
-            <div><h1> el rol es {console.log(role)}</h1></div>
             {role === 'admin' && (
               <>
                 <li>
@@ -193,7 +193,7 @@ const role = Astro.cookies.get('sb-role')?.value ?? '';
             </div>
 
             <div class="min-w-0">
-              <p class="text-sm font-medium text-blue-50 truncate">Pablita</p>
+              <p class="text-sm font-medium text-blue-50 truncate">{username}</p>
               <p class="text-xs text-blue-300/80 truncate">@{role}</p>
             </div>
           </div>

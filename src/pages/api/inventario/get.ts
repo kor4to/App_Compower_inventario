@@ -6,13 +6,12 @@ export type Sede = "surco" | "cusco";
 
 
 
-export function tableName(tipo: Tipo, sede: Sede = "surco"): string {
+export function tableName(tipo: Tipo, sede: Sede): string {
     return `${sede}_${tipo}`;
 }
 
-export async function listInventario(opts: { tipo: Tipo, sede?: Sede }) {
-    const sede = (opts.sede ?? "surco") as Sede;
-    const table = tableName(opts.tipo, sede);
+export async function listInventario(opts: { tipo: Tipo, sede: Sede }) {
+    const table = tableName(opts.tipo, opts.sede);
     const { data, error } = await supabase.from(table).select("*").order("codigo", { ascending: true });
     if(error) throw new Error(error.message);
     return data ?? [];

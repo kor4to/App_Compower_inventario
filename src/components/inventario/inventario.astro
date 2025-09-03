@@ -3,17 +3,24 @@ import "../../styles/global.css";
 import DashboardLayout from "../../layouts/DashboardLayout.astro";
 import { supabase } from "../../lib/supabase/SupabaseClient";
 
+const { modo = "nuevo", valoresIniciales = {}, categorias = [], unidades = [], onSubmit } = Astro.props;
+let categoria = valoresIniciales.categoria ?? "";
+let unid_med = valoresIniciales.unid_med ?? "";
+let nuevaCategoria = "";
+let nuevaUnidad = "";
+
 import {
   listInventario,
   money,
   subtotal,
   type Tipo,
+  type Sede,
 } from "../../pages/api/inventario/get.ts";
 
-const tipo = (Astro.url.searchParams.get("tipo") ?? "material") as Tipo;
-const sede = (Astro.url.searchParams.get("sede") ?? "surco").toLowerCase();
+const tipo = (Astro.url.searchParams.get("tipo") ?? "activo") as Tipo;
+const sede = (Astro.url.searchParams.get("sede") ?? "surco") as Sede;
 const page = Number(Astro.url.searchParams.get("page") ?? 1);
-const pageSize = 10;
+const pageSize = 15;
 const search = Astro.url.searchParams.get("search")?.toLowerCase() ?? "";
 const searchBy = Astro.url.searchParams.get("searchBy") ?? "nombre";
 const categoriaFiltro = Astro.url.searchParams.get("categoria") ?? "";
@@ -37,6 +44,7 @@ if (search) {
     return (r.nombre || "").toLowerCase().includes(search);
   });
 }
+
 // Filtrar por categoría
 if (categoriaFiltro) {
   filteredRows = filteredRows.filter(r => (r.categoria || "sin categoria") === categoriaFiltro);
@@ -50,10 +58,12 @@ const totalPages = Math.ceil(totalRows / pageSize);
 const paginatedRows = filteredRows.slice((page - 1) * pageSize, page * pageSize);
 ---
 
-
 <div class="mb-4 flex flex-col md:flex-row md:items-center md:gap-4 gap-2">
+  <div class="mb-2 text-sm text-gray-700 font-semibold">
+    Total de items: {totalRows}
+</div>
   <div class="flex gap-2">
-    {(["material", "herramienta", "activo"] as Tipo[]).map((t) => (
+    {(["activo","material", "herramienta"] as Tipo[]).map((t) => (
       <a
         href={`?tipo=${t}&sede=${sede}`}
         class={`px-3 py-1 rounded border ${t === tipo ? "bg-slate-900 text-white" : "bg-white hover:bg-slate-50"}`}
@@ -62,29 +72,32 @@ const paginatedRows = filteredRows.slice((page - 1) * pageSize, page * pageSize)
       </a>
     ))}
   </div>
-  <form method="get" class="flex gap-2 flex-wrap items-center">
-    <input type="hidden" name="tipo" value={tipo} />
-    <input type="hidden" name="sede" value={sede} />
-    <input type="hidden" name="page" value={1} />
-    <input
-      type="text"
-      name="search"
-      value={search}
-      placeholder="Buscar..."
-      class="border rounded px-2 py-1"
-    />
-    <select name="searchBy" class="border rounded px-2 py-1">
-      <option value="nombre" selected={searchBy === "nombre"}>Nombre</option>
-      <option value="codigo" selected={searchBy === "codigo"}>Código</option>
-    </select>
-    <select name="categoria" class="border rounded px-2 py-1">
-      <option value="">Todas las categorías</option>
-      {categoriasUnicas.map(cat => (
-        <option value={cat} selected={categoriaFiltro === cat}>{cat}</option>
-      ))}
-    </select>
-    <button type="submit" class="px-3 py-1 bg-blue-600 text-white rounded">Filtrar</button>
-  </form>
+  <div class="flex gap-2 items-center w-full">
+    <form method="get" class="flex gap-2 flex-wrap items-center flex-grow">
+      <input type="hidden" name="tipo" value={tipo} />
+      <input type="hidden" name="sede" value={sede} />
+      <input type="hidden" name="page" value={1} />
+      <input
+        type="text"
+        name="search"
+        value={search}
+        placeholder="Buscar..."
+        class="border rounded px-2 py-1"
+      />
+      <select name="searchBy" class="border rounded px-2 py-1">
+        <option value="nombre" selected={searchBy === "nombre"}>Nombre</option>
+        <option value="codigo" selected={searchBy === "codigo"}>Código</option>
+      </select>
+      <select name="categoria" class="border rounded px-2 py-1">
+        <option value="">Todas las categorías</option>
+        {categoriasUnicas.map(cat => (
+          <option value={cat} selected={categoriaFiltro === cat}>{cat}</option>
+        ))}
+      </select>
+      <button type="submit" class="px-3 py-1 bg-blue-600 text-white rounded">Filtrar</button>
+    </form>
+    <button type="submit" class="px-3 py-1 bg-green-400 text-white rounded" onclick={`import('/src/components/inventario/inventario-modal.js').then(m => m.openNewModal())`}>Nuevo</button>
+  </div>
 </div>
 
 
@@ -157,28 +170,63 @@ const paginatedRows = filteredRows.slice((page - 1) * pageSize, page * pageSize)
 </div>
 
 <!-- Paginación -->
-{totalPages > 1 && (
-  <div class="flex justify-center items-center gap-2 mt-4">
-    <a
-      href={`?tipo=${tipo}&sede=${sede}&page=${page - 1}`}
-      class={`px-3 py-1 rounded border ${page === 1 ? 'pointer-events-none opacity-50' : 'bg-white hover:bg-slate-50'}`}
-      aria-disabled={page === 1}
-    >Anterior</a>
-    {Array.from({ length: totalPages }, (_, i) => (
-      <a
-        href={`?tipo=${tipo}&sede=${sede}&page=${i + 1}`}
-        class={`px-3 py-1 rounded border ${page === i + 1 ? 'bg-slate-900 text-white' : 'bg-white hover:bg-slate-50'}`}
-      >
-        {i + 1}
-      </a>
-    ))}
-    <a
-      href={`?tipo=${tipo}&sede=${sede}&page=${page + 1}`}
-      class={`px-3 py-1 rounded border ${page === totalPages ? 'pointer-events-none opacity-50' : 'bg-white hover:bg-slate-50'}`}
-      aria-disabled={page === totalPages}
-    >Siguiente</a>
-  </div>
-)}
+  {
+    totalPages > 1 && (
+      <div class="flex justify-center items-center gap-2 mt-4">
+        {/* Mostrar 'Anterior' solo si no estamos en la primera página */}
+        {page > 1 && (
+          <a
+            href={`?tipo=${tipo}&sede=${sede}&page=${page - 1}`}
+            class="px-3 py-1 rounded border bg-white hover:bg-slate-50"
+          >
+            Anterior
+          </a>
+        )}
+        {/* Siempre mostrar la primera página */}
+        <a
+          href={`?tipo=${tipo}&sede=${sede}&page=1`}
+          class={`px-3 py-1 rounded border ${page === 1 ? "bg-slate-900 text-white" : "bg-white hover:bg-slate-50"}`}
+        >
+          1
+        </a>
+        {/* Mostrar ... si la página actual está lejos del inicio */}
+        {page > 3 && totalPages > 5 && <span class="px-2">...</span>}
+        {/* Mostrar páginas alrededor de la actual */}
+        {Array.from({ length: totalPages }, (_, i) => i + 1)
+          .filter((i) => i !== 1 && i !== totalPages && Math.abs(i - page) <= 1)
+          .map((i) => (
+            <a
+              href={`?tipo=${tipo}&sede=${sede}&page=${i}`}
+              class={`px-3 py-1 rounded border ${page === i ? "bg-slate-900 text-white" : "bg-white hover:bg-slate-50"}`}
+            >
+              {i}
+            </a>
+          ))}
+        {/* Mostrar ... si la página actual está lejos del final */}
+        {page < totalPages - 2 && totalPages > 5 && (
+          <span class="px-2">...</span>
+        )}
+        {/* Siempre mostrar la última página si hay más de una */}
+        {totalPages > 1 && (
+          <a
+            href={`?tipo=${tipo}&sede=${sede}&page=${totalPages}`}
+            class={`px-3 py-1 rounded border ${page === totalPages ? "bg-slate-900 text-white" : "bg-white hover:bg-slate-50"}`}
+          >
+            {totalPages}
+          </a>
+        )}
+        {/* Mostrar 'Siguiente' solo si no estamos en la última página */}
+        {page < totalPages && (
+          <a
+            href={`?tipo=${tipo}&sede=${sede}&page=${page + 1}`}
+            class="px-3 py-1 rounded border bg-white hover:bg-slate-50"
+          >
+            Siguiente
+          </a>
+        )}
+      </div>
+    )
+  }
 
 <!-- Modales fuera del contenedor de la tabla -->
 <div id="transfer-modal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 hidden animate-fade-in">
@@ -211,59 +259,9 @@ const paginatedRows = filteredRows.slice((page - 1) * pageSize, page * pageSize)
   </form>
 </div>
 
-<div id="edit-modal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 hidden animate-fade-in">
-  <form class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg border-2 border-blue-400 relative animate-fade-in" onsubmit="import('/src/components/inventario/inventario-modal.js').then(m => m.submitEditForm(event))">
-    <div class="modal-success"></div>
-    <h2 class="text-xl font-bold mb-4 text-blue-700 text-center">Editar Inventario</h2>
-    <input type="hidden" id="edit-id" name="edit-id" />
-    <input type="hidden" id="edit-tipo" name="edit-tipo" />
-    <div class="mb-3">
-      <label class="block text-sm font-semibold mb-1">Código</label>
-      <input type="text" id="edit-codigo" name="edit-codigo" class="border w-full rounded px-2 py-1 focus:ring-2 focus:ring-blue-300" required />
-    </div>
-    <div class="mb-3">
-      <label class="block text-sm font-semibold mb-1">Nombre</label>
-      <input type="text" id="edit-nombre" name="edit-nombre" class="border w-full rounded px-2 py-1 focus:ring-2 focus:ring-blue-300" required />
-    </div>
-    <div class="mb-3">
-      <label class="block text-sm font-semibold mb-1">Categoría</label>
-      <input type="text" id="edit-categoria" name="edit-categoria" class="border w-full rounded px-2 py-1" />
-    </div>
-    <div class="mb-3">
-      <label class="block text-sm font-semibold mb-1">Unidad de Medida</label>
-      <input type="text" id="edit-unid_med" name="edit-unid_med" class="border w-full rounded px-2 py-1" />
-    </div>
-    <div class="mb-3">
-      <label class="block text-sm font-semibold mb-1">Cantidad</label>
-      <input type="number" id="edit-cantidad" name="edit-cantidad" class="border w-full rounded px-2 py-1" min="0" step="1" required />
-    </div>
-    <div class="mb-3">
-      <label class="block text-sm font-semibold mb-1">Valor Unitario</label>
-      <input type="number" id="edit-valor_unitario" name="edit-valor_unitario" class="border w-full rounded px-2 py-1" min="0" step="0.01" required />
-    </div>
-    <div class="flex gap-2 justify-end mt-6">
-      <button type="button" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400" onclick="import('/src/components/inventario/inventario-modal.js').then(m => m.closeModal('edit-modal'))">Cancelar</button>
-      <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Guardar</button>
-    </div>
-  </form>
-</div>
-
-<div id="delete-modal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 hidden animate-fade-in">
-  <form class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg border-2 border-red-400 relative animate-fade-in" onsubmit="import('/src/components/inventario/inventario-modal.js').then(m => m.submitDeleteForm(event))">
-    <div class="modal-success"></div>
-    <input type="hidden" id="delete-id" name="delete-id" />
-    <input type="hidden" id="delete-tipo" name="delete-tipo" />
-    <h2 class="text-xl font-bold mb-4 text-red-700 text-center">¿Seguro que deseas eliminar <span id="delete-nombre" class="font-semibold"></span>?</h2>
-    <div class="flex gap-2 justify-end mt-6">
-      <button type="button" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400" onclick="import('/src/components/inventario/inventario-modal.js').then(m => m.closeModal('delete-modal'))">Cancelar</button>
-      <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Eliminar</button>
-    </div>
-  </form>
-</div>
-
 <!-- Modal Editar -->
 <div id="edit-modal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 hidden animate-fade-in">
-  <form class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg border-2 border-blue-400 relative animate-fade-in" onsubmit="import('/src/components/inventario/inventario-modal.js').then(m => m.submitEditForm(event))">
+  <form method="POST" class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg border-2 border-blue-400 relative animate-fade-in" onsubmit="import('/src/components/inventario/inventario-modal.js').then(m => m.submitEditForm(event))">
     <div class="modal-success"></div>
     <h2 class="text-xl font-bold mb-4 text-blue-700 text-center">Editar Inventario</h2>
     <input type="hidden" id="edit-id" name="edit-id" />
@@ -301,14 +299,68 @@ const paginatedRows = filteredRows.slice((page - 1) * pageSize, page * pageSize)
 
 <!-- Modal Eliminar -->
 <div id="delete-modal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 hidden animate-fade-in">
-  <form class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg border-2 border-red-400 relative animate-fade-in" onsubmit="import('/src/components/inventario/inventario-modal.js').then(m => m.submitDeleteForm(event))">
+  <form method="POST" class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg border-2 border-red-400 relative animate-fade-in" onsubmit="import('/src/components/inventario/inventario-modal.js').then(m => m.submitDeleteForm(event))">
     <div class="modal-success"></div>
     <input type="hidden" id="delete-id" name="delete-id" />
-    <input type="hidden" id="delete-tipo" name="delete-tipo" />
+    <input type="hidden" id="delete-tipo" name="delete-tipo" value={tipo} />
+    <input type="hidden" id="delete-sede" name="delete-sede" value={sede} />
     <h2 class="text-xl font-bold mb-4 text-red-700 text-center">¿Seguro que deseas eliminar <span id="delete-nombre" class="font-semibold"></span>?</h2>
     <div class="flex gap-2 justify-end mt-6">
       <button type="button" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400" onclick="import('/src/components/inventario/inventario-modal.js').then(m => m.closeModal('delete-modal'))">Cancelar</button>
       <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Eliminar</button>
+    </div>
+  </form>
+</div>
+
+<!-- Modal nuevo -->
+<div id= "new-modal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 animate-fade-in hidden">
+  <form method="POST" class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg border-2 border-blue-400 relative animate-fade-in" onsubmit="import('/src/components/inventario/inventario-modal.js').then(m => m.submitNewForm(event))">
+    <h2 class="text-xl font-bold mb-4 text-blue-700 text-center">Nuevo Inventario</h2>
+    <input type="hidden" id="sede" name="sede" value={sede} />
+    <input type="hidden" id="tipo" name="tipo" value={tipo} />
+    <div class="mb-3">
+      <label class="block text-sm font-semibold mb-1">Código</label>
+      <input id="new-codigo" type="text" name="codigo" class="border w-full rounded px-2 py-1 focus:ring-2 focus:ring-blue-300" required placeholder="Por ejemplo: ALC-001" value={valoresIniciales.codigo ?? ""} />
+    </div>
+    <div class="mb-3">
+      <label class="block text-sm font-semibold mb-1">Nombre</label>
+      <input id="new-nombre" type="text" name="nombre" class="border w-full rounded px-2 py-1 focus:ring-2 focus:ring-blue-300" required value={valoresIniciales.nombre ?? ""} />
+    </div>
+    <div class="mb-3">
+      <label class="block text-sm font-semibold mb-1">Categoría</label>
+      <select id="new-categoria" name="categoria" class="border w-full rounded px-2 py-1"
+        onchange="if(this.value==='otro'){document.getElementById('nueva-categoria').style.display='block'}else{document.getElementById('nueva-categoria').style.display='none'}; this.options[0].hidden = true;"
+        required>
+        <option value="" selected={!categoria}>--Seleccione una opción--</option>
+        {categoriasUnicas.map(cat => <option value={cat} selected={categoria === cat}>{cat}</option>)}
+        <option value="otro">Otro...</option>
+      </select>
+      <input type="text" id="nueva-categoria" name="nueva-categoria" class="border w-full rounded px-2 py-1 mt-2" style="display:none" placeholder="Nueva categoría" />
+    </div>
+    <div class="mb-3">
+      <label class="block text-sm font-semibold mb-1">Unidad de Medida</label>
+      <select id="new-unid_med" name="unid_med" class="border w-full rounded px-2 py-1"
+        onchange="if(this.value==='otro'){document.getElementById('nueva-unidad').style.display='block'}else{document.getElementById('nueva-unidad').style.display='none'}; this.options[0].hidden = true;"
+        required>
+        <option value="" selected={!unid_med}>--Seleccione una opción--</option>
+        {Array.from(new Set(rows.map(r => r.unid_med || ""))).filter(u => u).map(u => (
+          <option value={u} selected={unid_med === u}>{u}</option>
+        ))}
+        <option value="otro">Otro...</option>
+      </select>
+      <input type="text" id="nueva-unidad" name="nueva-unidad" class="border w-full rounded px-2 py-1 mt-2" style="display:none" placeholder="Nueva unidad de medida" />
+    </div>
+    <div class="mb-3">
+      <label class="block text-sm font-semibold mb-1">Cantidad</label>
+      <input id="new-cantidad" type="number" name="cantidad" class="border w-full rounded px-2 py-1" min="0" step="1" required value={valoresIniciales.cantidad ?? ""} />
+    </div>
+    <div class="mb-3">
+      <label class="block text-sm font-semibold mb-1">Valor Unitario</label>
+      <input id="new-valor_unitario" type="number" name="valor_unitario" class="border w-full rounded px-2 py-1" min="0" step="0.01" required value={valoresIniciales.valor_unitario ?? ""} />
+    </div>
+    <div class="flex gap-2 justify-end mt-6">
+      <button type="button" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400" onclick="import('/src/components/inventario/inventario-modal.js').then(m => m.closeModal('new-modal'))">Cancelar</button>
+      <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">{modo === "nuevo" ? "Crear" : "Guardar"}</button>
     </div>
   </form>
 </div>

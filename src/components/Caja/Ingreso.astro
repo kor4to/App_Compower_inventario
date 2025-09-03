@@ -1,0 +1,52 @@
+---
+import '../../styles/global.css';
+---
+<div class="max-w-2xl mx-auto p-6">
+    <form method="post" action="/api/caja/create" class="space-y-4">
+        <!-- Selector de Cuenta -->
+        <div class="mb-4">
+            <label for="cuenta" class="block text-gray-700 font-medium mb-2">Elegir Cuenta:</label>
+            <select id="cuenta" name="cuenta" required class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">Seleccione una cuenta</option>
+                <option value="corriente_soles">Corriente en Soles</option>
+                <option value="ahorro_soles">Ahorro en Soles</option>
+                <option value="ahorro_dolares">Ahorro en Dólares</option>
+            </select>
+        </div>
+
+        <!-- Campos adicionales (inicialmente ocultos) -->
+        <div id="campos-adicionales" class="hidden space-y-4">
+            <!-- Origen -->
+            <div class="mb-4">
+                <label for="origen" class="block text-gray-700 font-medium mb-2">Origen:</label>
+                <input type="text" id="origen" name="origen" required 
+                    class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+
+            <!-- Monto -->
+            <div class="mb-4">
+                <label for="monto" class="block text-gray-700 font-medium mb-2">Monto:</label>
+                <input type="number" id="monto" name="monto" required step="0.01"
+                    class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+
+            <!-- Botón de envío -->
+            <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded w-full">
+                Registrar Ingreso
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    const cuentaSelect = document.getElementById('cuenta');
+    const camposAdicionales = document.getElementById('campos-adicionales');
+    
+    cuentaSelect.addEventListener('change', (e) => {
+        if (e.target.value) {
+            camposAdicionales.classList.remove('hidden');
+        } else {
+            camposAdicionales.classList.add('hidden');
+        }
+    });
+</script>
