@@ -27,6 +27,8 @@ export async function submitTransferForm(e) {
     return;
   }
   // Aquí deberías hacer la petición al backend para transferir
+
+
   // Por ahora solo muestra éxito simulado
   showModalSuccess('transfer-modal', '¡Transferencia realizada!');
   setTimeout(() => window.location.reload(), 1200);
@@ -37,6 +39,11 @@ export async function submitTransferForm(e) {
 export function openEditModal(row) {
   const modal = document.getElementById('edit-modal');
   fillEditForm(row);
+  modal.classList.remove('hidden');
+}
+
+export function openNewModal() {
+  const modal = document.getElementById('new-modal');
   modal.classList.remove('hidden');
 }
 
@@ -97,10 +104,71 @@ export async function submitEditForm(e) {
   });
   if (res.ok) {
     showModalSuccess('edit-modal', '¡Editado correctamente!');
-    setTimeout(() => window.location.reload(), 1200);
+    setTimeout(() => window.location.href = `?tipo=${tipo}&sede=${sede}`, 1200);
   } else {
     const errText = await res.text();
     showModalError('edit-modal', errText || 'Error al editar');
+  }
+}
+
+export async function submitNewForm(e) {
+  e.preventDefault();
+  const form = e.target;
+  const tipo = form['tipo'].value; // campo oculto
+  const sede = form['sede'].value; // campo oculto
+  const nombre = form['new-nombre'].value.trim();
+  const codigo = form['new-codigo'].value.trim();
+  const cantidad = form['new-cantidad'].value;
+  const valor_unitario = form['new-valor_unitario'].value;
+
+  // Categoría
+  let categoria = form['new-categoria'].value;
+  if (categoria === 'otro') {
+    categoria = form['nueva-categoria'].value.trim();
+  }
+
+  // Unidad de medida
+  let unid_med = form['new-unid_med'].value;
+  if (unid_med === 'otro') {
+    unid_med = form['nueva-unidad'].value.trim();
+  }
+
+  // Validaciones básicas
+  let errorMsg = '';
+  if (!codigo) errorMsg = 'El código es obligatorio.';
+  else if (!nombre) errorMsg = 'El nombre es obligatorio.';
+  else if (!categoria) errorMsg = 'La categoría es obligatoria.';
+  else if (!unid_med) errorMsg = 'La unidad de medida es obligatoria.';
+  else if (isNaN(Number(cantidad)) || Number(cantidad) < 0) errorMsg = 'Cantidad inválida.';
+  else if (isNaN(Number(valor_unitario)) || Number(valor_unitario) < 0) errorMsg = 'Valor unitario inválido.';
+
+  if (errorMsg) {
+    showModalError('new-modal', errorMsg);
+    return;
+  }
+
+  const data = {
+    tipo, sede,
+    codigo,
+    nombre,
+    categoria,
+    unid_med,
+    cantidad,
+    valor_unitario,
+  };
+
+  const res = await fetch('/api/inventario/crud', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'agregar', ...data})
+  });
+
+  if (res.ok) {
+    showModalSuccess('new-modal', '¡Agregado correctamente!');
+    setTimeout(() => window.location.href = `?tipo=${tipo}&sede=${sede}`, 5000);
+  } else {
+    const errText = await res.text();
+    showModalError('new-modal', errText || 'Error al agregar');
   }
 }
 
@@ -119,14 +187,15 @@ export async function submitDeleteForm(e) {
   const form = e.target;
   const id = form['delete-id'].value;
   const tipo = form['delete-tipo'].value;
+  const sede = form['delete-sede'].value;
   const res = await fetch('/api/inventario/crud', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'eliminar', id, tipo })
+    body: JSON.stringify({ action: 'eliminar', tipo, id, sede })
   });
   if (res.ok) {
     showModalSuccess('delete-modal', '¡Eliminado correctamente!');
-    setTimeout(() => window.location.reload(), 1200);
+    setTimeout(() => window.location.href = `?tipo=${tipo}&sede=${sede}`, 5000);
   } else {
     showModalError('delete-modal', 'Error al eliminar');
   }

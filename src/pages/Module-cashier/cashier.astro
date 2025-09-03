@@ -1,9 +1,120 @@
 ---
 import DashboardLayout from "../../layouts/DashboardLayout.astro";
 import { supabase } from "../../lib/supabase/SupabaseClient";
+import EgresoForm from "../../components/Caja/Egreso.astro";
+import AsignacionForm from "../../components/Caja/Asignaciones.astro";
+import IngresoForm from "../../components/Caja/Ingreso.astro";
+import ReporteForm from "../../components/Caja/Reporte.astro";
 ---
+
 <DashboardLayout title="Caja">
-    <h1>Bienvenido a la pagina de caja</h1>
+    <div class="container mx-auto px-4">
+        <!-- Header -->
+        <header class="py-6 mb-6">
+            <h1 class="text-3xl font-bold text-center text-gray-800">Módulo de Caja</h1>
+        </header>
+
+        <!-- Navegación -->
+        <nav class="mb-8">
+            <div class="grid grid-cols-4 gap-4">
+                <button id="btn-asignaciones" 
+                    class="p-3 text-white rounded transition-colors button-nav">
+                    Asignaciones
+                </button>
+                <button id="btn-ingresos" 
+                    class="p-3 text-white rounded transition-colors button-nav">
+                    Ingresos
+                </button>
+                <button id="btn-egresos" 
+                    class="p-3 text-white rounded transition-colors button-nav active">
+                    Egresos
+                </button>
+                <button id="btn-reportes" 
+                    class="p-3 text-white rounded transition-colors button-nav">
+                    Reportes
+                </button>
+            </div>
+        </nav>
+
+        <!-- Contenedor de Formularios -->
+        <div id="form-container">
+            <div id="asignaciones-form" class="hidden">
+                <AsignacionForm />
+            </div>
+            <div id="ingresos-form" class="hidden">
+                <IngresoForm />
+            </div>
+            <div id="egresos-form" class="hidden">
+                <EgresoForm />
+            </div>
+            <div id="reportes-form" class="hidden">
+                <ReporteForm />
+            </div>
+        </div>
+    </div>
+</DashboardLayout>
+
+<style>
+    .button-nav {
+        background-color: #3b82f6; /* blue-500 */
+    }
+    
+    .button-nav:hover {
+        background-color: #2563eb; /* blue-600 */
+    }
+    
+    .button-nav.active {
+        background-color: #1d4ed8; /* blue-700 */
+        border: 2px solid #60a5fa; /* blue-400 */
+        font-weight: bold;
+    }
+</style>
+
+<script>
+    const buttons = {
+        asignaciones: document.getElementById('btn-asignaciones'),
+        ingresos: document.getElementById('btn-ingresos'),
+        egresos: document.getElementById('btn-egresos'),
+        reportes: document.getElementById('btn-reportes')
+    };
+
+    const forms = {
+        asignaciones: document.getElementById('asignaciones-form'),
+        ingresos: document.getElementById('ingresos-form'),
+        egresos: document.getElementById('egresos-form'),
+        reportes: document.getElementById('reportes-form')
+    };
+
+    // Función para ocultar todos los formularios
+    function hideAllForms() {
+        Object.values(forms).forEach(form => {
+            form.classList.add('hidden');
+        });
+    }
+
+    // Función para eliminar la clase 'active' de todos los botones
+    function removeActiveFromAllButtons() {
+        Object.values(buttons).forEach(button => {
+            button.classList.remove('active');
+        });
+    }
+
+    // Función para mostrar un formulario específico
+    function showForm(formId) {
+        hideAllForms();
+        removeActiveFromAllButtons();
+        forms[formId].classList.remove('hidden');
+        buttons[formId].classList.add('active');
+    }
+
+    // Agregar event listeners a los botones
+    Object.entries(buttons).forEach(([key, button]) => {
+        button.addEventListener('click', () => showForm(key));
+    });
+
+    // Mostrar el formulario de egresos por defecto
+    showForm('egresos');
+</script>
 
 
 

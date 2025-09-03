@@ -1,0 +1,73 @@
+---
+import "../../styles/global.css";
+---
+<div class="container mx-auto p-4">
+    <h1 class="text-2xl font-bold mb-6">Consulta de datos del inventario</h1>
+    <form id="reportForm" class="space-y-6 max-w-md">
+        <div class="form-group">
+            <label for="location" class="block text-sm font-medium mb-2">Ubicación del Almacén:</label>
+            <select id="location" name="location" class="w-full p-2 border rounded-md">
+                <option value="surco">Surco</option>
+                <option value="cusco">Cusco</option>
+                <option value="both">Ambos Almacenes</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="block text-sm font-medium mb-2">Tipo de Items:</label>
+            <div class="space-y-2">
+                <div>
+                    <input type="radio" id="all" name="itemType" value="all" checked>
+                    <label for="all" class="ml-2">Todo el inventario</label>
+                </div>
+                <div>
+                    <input type="radio" id="tools" name="itemType" value="tools">
+                    <label for="tools" class="ml-2">Herramientas</label>
+                </div>
+                <div>
+                    <input type="radio" id="materials" name="itemType" value="materials">
+                    <label for="materials" class="ml-2">Materiales</label>
+                </div>
+                <div>
+                    <input type="radio" id="assets" name="itemType" value="assets">
+                    <label for="assets" class="ml-2">Activos</label>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">
+            Generar Reporte
+        </button>
+    </form>
+</div>
+
+<script>
+    const form = document.getElementById('reportForm') as HTMLFormElement;
+    if (form) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const locationElement = document.getElementById('location') as HTMLSelectElement;
+            const checkedItemType = document.querySelector('input[name="itemType"]:checked') as HTMLInputElement;
+            
+            if (locationElement && checkedItemType) {
+                const location = locationElement.value;
+                const itemType = checkedItemType.value;
+
+                try {
+                    // Aquí puedes agregar la lógica para obtener los datos del inventario
+                    // según los filtros seleccionados
+                    console.log('Filtros seleccionados:', {
+                        location,
+                        itemType
+                    });
+
+                    // TODO: Implementar la llamada a la API para obtener los datos filtrados
+                    
+                } catch (error) {
+                    console.error('Error al generar el reporte:', error);
+                }
+            }
+        });
+    }
+</script>
