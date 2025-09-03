@@ -168,7 +168,7 @@ export async function submitNewForm(e) {
     setTimeout(() => window.location.href = `?tipo=${tipo}&sede=${sede}`, 5000);
   } else {
     const errText = await res.text();
-    showModalError('new-modal', errText || 'Error al agregar');
+    showModalError('new-modal', errText || 'Error');
   }
 }
 
