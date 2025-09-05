@@ -3,6 +3,7 @@ import "../styles/global.css";
 
 const role = Astro.cookies.get('sb-role')?.value ?? '';
 const username = Astro.cookies.get('sb-username')?.value ?? '';
+const currentSede = Astro.url.searchParams.get('sede') || 'surco';
 
 ---
 <html lang="es">
@@ -89,37 +90,24 @@ const username = Astro.cookies.get('sb-username')?.value ?? '';
                     <span>💰</span> Caja
                   </a>
                 </li>
-                <li class="group">
+                <li>
                   <button
                     type="button"
-                    class="flex items-center w-full hover:text-blue-300 focus:outline-none"
-                    onclick="this.nextElementSibling.classList.toggle('hidden')"
+                    id="sedeToggleBtn"
+                    class="flex items-center w-full hover:text-blue-300 focus:outline-none bg-blue-600 rounded px-2 py-1"
+                    onclick="const nuevaSede = this.getAttribute('data-sede') === 'surco' ? 'cusco' : 'surco'; window.location.href = '/Module-Inventory/inventory?sede=' + nuevaSede"
+                    data-sede={currentSede}
                   >
-                    <span>📍</span> Sede
-                    <svg
-                      class="ml-auto w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      viewBox="0 0 24 24"
-                      ><path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M19 9l-7 7-7-7"></path></svg
-                    >
+                    📍 {currentSede.toUpperCase()}
                   </button>
-                  <ul
-                    class="ml-6 mt-1 hidden bg-blue-400 rounded group-hover:block"
+                </li>
+                <li>
+                  <a
+                    href="/Module-Inventory/inventory?tipo=traslado"
+                    class="hover:text-blue-300 flex items-center gap-2"
                   >
-                    <li>
-                      <a href="/Module-Inventory/inventory?sede=surco" class="block py-1 px-2 hover:text-blue-200"
-                        >Surco</a>
-                    </li>
-                    <li>
-                      <a href="/Module-Inventory/inventory?sede=cusco" class="block py-1 px-2 hover:text-blue-200"
-                        >Cusco</a>
-                    </li>
-                  </ul>
+                    <span>🔄</span> Traslados
+                  </a>
                 </li>
               </>
             )}

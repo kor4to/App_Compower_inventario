@@ -5,6 +5,10 @@ export function openTransferModal(row) {
   document.getElementById('transfer-tipo').value = row.tipo;
   document.getElementById('transfer-sede-origen').value = row.sede;
   document.getElementById('transfer-nombre').value = row.nombre;
+  document.getElementById('transfer-categoria').value = row.categoria;
+  document.getElementById('transfer-unid_med').value = row.unid_med;
+  document.getElementById('transfer-codigo').value = row.codigo;
+  document.getElementById('transfer-valor_unitario').value = row.valor_unitario;
   document.getElementById('transfer-cantidad').value = '';
   document.getElementById('transfer-sede-destino').value = '';
   modal.classList.remove('hidden');
@@ -13,12 +17,12 @@ export function openTransferModal(row) {
 export async function submitTransferForm(e) {
   e.preventDefault();
   const form = e.target;
-  const id = form['transfer-id'].value;
   const tipo = form['transfer-tipo'].value;
   const sede_origen = form['transfer-sede-origen'].value;
   const nombre = form['transfer-nombre'].value;
   const cantidad = Number(form['transfer-cantidad'].value);
   const sede_destino = form['transfer-sede-destino'].value;
+
   let errorMsg = '';
   if (!cantidad || cantidad <= 0) errorMsg = 'Cantidad inválida.';
   else if (!sede_destino || sede_destino === sede_origen) errorMsg = 'Selecciona un almacén destino diferente.';
@@ -26,12 +30,44 @@ export async function submitTransferForm(e) {
     showModalError('transfer-modal', errorMsg);
     return;
   }
-  // Aquí deberías hacer la petición al backend para transferir
 
+  // Aquí puedes agregar los demás datos necesarios para la transferencia
+  // Por ejemplo, código, categoría, unid_med, valor_unitario, etc.
+  const codigo = form['transfer-codigo'] ? form['transfer-codigo'].value : '';
+  const categoria = form['transfer-categoria'] ? form['transfer-categoria'].value : '';
+  const unid_med = form['transfer-unid_med'] ? form['transfer-unid_med'].value : '';
+  const valor_unitario = form['transfer-valor_unitario'] ? form['transfer-valor_unitario'].value : '';
 
-  // Por ahora solo muestra éxito simulado
-  showModalSuccess('transfer-modal', '¡Transferencia realizada!');
-  setTimeout(() => window.location.reload(), 1200);
+  // Construir el objeto data para el backend
+  const data = {
+    nombre,
+    categoria,
+    unid_med,
+    valor_unitario
+  };
+
+  // Llamar al endpoint de transferencia
+  const res = await fetch('/api/inventario/transfer', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'transferir',
+      tipo,
+      codigo,
+      cantidad,
+      sede_origen,
+      sede_destino,
+      data
+    })
+  });
+
+  if (res.ok) {
+    showModalSuccess('transfer-modal', '¡Transferencia realizada!');
+    setTimeout(() => window.location.href = `?tipo=${tipo}&sede=${sede_origen}`, 1200);
+  } else {
+    const errText = await res.text();
+    showModalError('transfer-modal', errText || 'Error al transferir');
+  }
 }
 // inventario-modal.js
 // Lógica para abrir/cerrar modales y enviar peticiones fetch para editar/eliminar
@@ -62,6 +98,7 @@ export function closeModal(id) {
 function fillEditForm(row) {
   document.getElementById('edit-id').value = row.id;
   document.getElementById('edit-tipo').value = row.tipo;
+  document.getElementById('edit-sede').value = row.sede;
   document.getElementById('edit-codigo').value = row.codigo ?? '';
   document.getElementById('edit-nombre').value = row.nombre;
   document.getElementById('edit-categoria').value = row.categoria ?? '';
@@ -90,6 +127,7 @@ export async function submitEditForm(e) {
   const data = {
     id: form['edit-id'].value,
     tipo: form['edit-tipo'].value,
+    sede: form['edit-sede'].value,
     codigo,
     nombre,
     categoria: form['edit-categoria'].value,
@@ -104,7 +142,9 @@ export async function submitEditForm(e) {
   });
   if (res.ok) {
     showModalSuccess('edit-modal', '¡Editado correctamente!');
-    setTimeout(() => window.location.href = `?tipo=${tipo}&sede=${sede}`, 1200);
+
+    setTimeout(() => window.location.href = `?tipo=${tipo}&sede=${sede}`, 5000);
+    setTimeout(() => window.location.href = `?tipo=${tipo}&sede=${sede}`, 5000);
   } else {
     const errText = await res.text();
     showModalError('edit-modal', errText || 'Error al editar');
@@ -166,6 +206,7 @@ export async function submitNewForm(e) {
   if (res.ok) {
     showModalSuccess('new-modal', '¡Agregado correctamente!');
     setTimeout(() => window.location.href = `?tipo=${tipo}&sede=${sede}`, 5000);
+    setTimeout(() => window.location.href = `?tipo=${tipo}&sede=${sede}`, 5000);
   } else {
     const errText = await res.text();
     showModalError('new-modal', errText || 'Error');
@@ -195,6 +236,7 @@ export async function submitDeleteForm(e) {
   });
   if (res.ok) {
     showModalSuccess('delete-modal', '¡Eliminado correctamente!');
+    setTimeout(() => window.location.href = `?tipo=${tipo}&sede=${sede}`, 5000);
     setTimeout(() => window.location.href = `?tipo=${tipo}&sede=${sede}`, 5000);
   } else {
     showModalError('delete-modal', 'Error al eliminar');
