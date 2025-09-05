@@ -35,6 +35,9 @@ export async function editarInventario({ tipo, id, sede, data }: { tipo: Tipo, i
 		.from(table)
 		.update(data)
 		.eq('id', id);
+
+	
+	console.log('Inventario editado:', data, ' en la tabla:', table);
 	if (error) throw new Error(error.message);
 	return true;
 }

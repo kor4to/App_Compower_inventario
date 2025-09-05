@@ -56,9 +56,15 @@ const categoriasUnicas = Array.from(new Set(rows.map(r => r.categoria || "sin ca
 const totalRows = filteredRows.length;
 const totalPages = Math.ceil(totalRows / pageSize);
 const paginatedRows = filteredRows.slice((page - 1) * pageSize, page * pageSize);
+
+// Calcular el subtotal total por tipo (no por búsqueda)
+const totalSubtotalPorTipo = rows.reduce((acc, r) => acc + subtotal(r), 0);
 ---
 
 <div class="mb-4 flex flex-col md:flex-row md:items-center md:gap-4 gap-2">
+  <div class="mb-2 text-sm text-green-700 font-semibold">
+    Subtotal total ({tipo}): {money(totalSubtotalPorTipo)}
+  </div>
   <div class="mb-2 text-sm text-gray-700 font-semibold">
     Total de items: {totalRows}
 </div>
@@ -139,7 +145,7 @@ const paginatedRows = filteredRows.slice((page - 1) * pageSize, page * pageSize)
               <td class="border p-2 text-center">
                 <button
                   class="underline text-blue-600"
-                  onclick={`import('/src/components/inventario/inventario-modal.js').then(m => m.openEditModal(${JSON.stringify({ ...r, tipo })}))`}
+                  onclick={`import('/src/components/inventario/inventario-modal.js').then(m => m.openEditModal(${JSON.stringify({ ...r, tipo, sede })}))`}
                 >
                   Editar
                 </button>
@@ -176,7 +182,7 @@ const paginatedRows = filteredRows.slice((page - 1) * pageSize, page * pageSize)
         {/* Mostrar 'Anterior' solo si no estamos en la primera página */}
         {page > 1 && (
           <a
-            href={`?tipo=${tipo}&sede=${sede}&page=${page - 1}`}
+            href={`?tipo=${tipo}&sede=${sede}&search=${encodeURIComponent(search)}&searchBy=${searchBy}&categoria=${categoriaFiltro}&page=${page - 1}`}
             class="px-3 py-1 rounded border bg-white hover:bg-slate-50"
           >
             Anterior
@@ -184,7 +190,7 @@ const paginatedRows = filteredRows.slice((page - 1) * pageSize, page * pageSize)
         )}
         {/* Siempre mostrar la primera página */}
         <a
-          href={`?tipo=${tipo}&sede=${sede}&page=1`}
+          href={`?tipo=${tipo}&sede=${sede}&search=${encodeURIComponent(search)}&searchBy=${searchBy}&categoria=${categoriaFiltro}&page=1`}
           class={`px-3 py-1 rounded border ${page === 1 ? "bg-slate-900 text-white" : "bg-white hover:bg-slate-50"}`}
         >
           1
@@ -196,7 +202,7 @@ const paginatedRows = filteredRows.slice((page - 1) * pageSize, page * pageSize)
           .filter((i) => i !== 1 && i !== totalPages && Math.abs(i - page) <= 1)
           .map((i) => (
             <a
-              href={`?tipo=${tipo}&sede=${sede}&page=${i}`}
+              href={`?tipo=${tipo}&sede=${sede}&search=${encodeURIComponent(search)}&searchBy=${searchBy}&categoria=${categoriaFiltro}&page=${i}`}
               class={`px-3 py-1 rounded border ${page === i ? "bg-slate-900 text-white" : "bg-white hover:bg-slate-50"}`}
             >
               {i}
@@ -209,7 +215,7 @@ const paginatedRows = filteredRows.slice((page - 1) * pageSize, page * pageSize)
         {/* Siempre mostrar la última página si hay más de una */}
         {totalPages > 1 && (
           <a
-            href={`?tipo=${tipo}&sede=${sede}&page=${totalPages}`}
+            href={`?tipo=${tipo}&sede=${sede}&search=${encodeURIComponent(search)}&searchBy=${searchBy}&categoria=${categoriaFiltro}&page=${totalPages}`}
             class={`px-3 py-1 rounded border ${page === totalPages ? "bg-slate-900 text-white" : "bg-white hover:bg-slate-50"}`}
           >
             {totalPages}
@@ -218,7 +224,7 @@ const paginatedRows = filteredRows.slice((page - 1) * pageSize, page * pageSize)
         {/* Mostrar 'Siguiente' solo si no estamos en la última página */}
         {page < totalPages && (
           <a
-            href={`?tipo=${tipo}&sede=${sede}&page=${page + 1}`}
+            href={`?tipo=${tipo}&sede=${sede}&search=${encodeURIComponent(search)}&searchBy=${searchBy}&categoria=${categoriaFiltro}&page=${page + 1}`}
             class="px-3 py-1 rounded border bg-white hover:bg-slate-50"
           >
             Siguiente
@@ -230,12 +236,16 @@ const paginatedRows = filteredRows.slice((page - 1) * pageSize, page * pageSize)
 
 <!-- Modales fuera del contenedor de la tabla -->
 <div id="transfer-modal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 hidden animate-fade-in">
-  <form class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg border-2 border-green-400 relative animate-fade-in" onsubmit="import('/src/components/inventario/inventario-modal.js').then(m => m.submitTransferForm(event))">
+  <form method="POST" class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg border-2 border-green-400 relative animate-fade-in" onsubmit="import('/src/components/inventario/inventario-modal.js').then(m => m.submitTransferForm(event))">
     <div class="modal-success"></div>
     <h2 class="text-xl font-bold mb-4 text-green-700 text-center">Transferir Inventario</h2>
     <input type="hidden" id="transfer-id" name="transfer-id" />
     <input type="hidden" id="transfer-tipo" name="transfer-tipo" />
     <input type="hidden" id="transfer-sede-origen" name="transfer-sede-origen" />
+    <input type="hidden" id="transfer-categoria" name="transfer-categoria" />
+    <input type="hidden" id="transfer-unid_med" name="transfer-unid_med" />
+    <input type="hidden" id="transfer-valor_unitario" name="transfer-valor_unitario" />
+    <input type="hidden" id="transfer-codigo" name="transfer-codigo" />
     <div class="mb-3">
       <label class="block text-sm font-semibold mb-1">Nombre</label>
       <input type="text" id="transfer-nombre" name="transfer-nombre" class="border w-full rounded px-2 py-1 bg-gray-100" readonly />
@@ -264,8 +274,9 @@ const paginatedRows = filteredRows.slice((page - 1) * pageSize, page * pageSize)
   <form method="POST" class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg border-2 border-blue-400 relative animate-fade-in" onsubmit="import('/src/components/inventario/inventario-modal.js').then(m => m.submitEditForm(event))">
     <div class="modal-success"></div>
     <h2 class="text-xl font-bold mb-4 text-blue-700 text-center">Editar Inventario</h2>
-    <input type="hidden" id="edit-id" name="edit-id" />
+    <input type="hidden" id="edit-id" name="edit-id"/>
     <input type="hidden" id="edit-tipo" name="edit-tipo" />
+    <input type="hidden" id="edit-sede" name="edit-sede" />
     <div class="mb-3">
       <label class="block text-sm font-semibold mb-1">Código</label>
       <input type="text" id="edit-codigo" name="edit-codigo" class="border w-full rounded px-2 py-1 focus:ring-2 focus:ring-blue-300" required />
