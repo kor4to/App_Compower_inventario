@@ -24,9 +24,9 @@ export const POST: APIRoute = async ({ request }) => {
 };
 
 import { supabase } from "../../../lib/supabase/SupabaseClient";
-import type { Tipo } from './get';
-import type { Sede } from './get';
-import { tableName } from './get';
+import type { Tipo } from "./get";
+import type { Sede } from "./get";
+import { tableName } from "./get";
 
 // Buscar un item por código en una sede/tipo
 export async function buscarItemPorCodigo({
@@ -82,6 +82,31 @@ export async function eliminarItem({
   return true;
 }
 
+export async function transferKardex({
+  data,
+  detalle,
+  nuevaCantidad
+}: {
+  data: any;
+  detalle: string;
+  nuevaCantidad: number;
+}){
+  const valor = Number(data?.valor_unitario ?? 0) * Number(data?.cantidad ?? 0);
+  const { error } = await supabase.from("kardex").insert({
+    tipo: "Transferencia",
+    valor_unitario: data?.valor_unitario ?? 0,
+    detalle,
+    cantidad: data?.cantidad ?? 0,
+    valor,
+    cantidad_saldo: nuevaCantidad,
+    valor_saldo: nuevaCantidad * Number(data?.valor_unitario ?? 0),
+  });
+  if (error) {
+    console.log(error.message);
+    throw new Error(error.message);
+  }
+}
+
 // Sumar cantidad a un item (o crear si no existe)
 export async function sumarOAgregarItem({
   tipo,
@@ -96,16 +121,24 @@ export async function sumarOAgregarItem({
   data: any;
   cantidad: number;
 }) {
-  console.log("funcion: sumarOAgregarItem - inicio", { tipo, sede, codigo, cantidad });
+  console.log("funcion: sumarOAgregarItem - inicio", {
+    tipo,
+    sede,
+    codigo,
+    cantidad,
+  });
   const tabla = tableName(tipo, sede);
   const item = await buscarItemPorCodigo({ tipo, sede, codigo });
   if (item) {
     // Sumar cantidad
     const nuevaCantidad = Number(item.cantidad) + Number(cantidad);
+    const detalle = "Transferencia de " + (data?.nombre ?? "N/A") + " desde " + data?.sedeOrigen + " hasta " + data?.sedeDestino;
     const { error } = await supabase
-      .from(tabla)
-      .update({ cantidad: nuevaCantidad })
-      .eq("codigo", codigo);
+    .from(tabla)
+    .update({ cantidad: nuevaCantidad })
+    .eq("codigo", codigo);
+    
+    await transferKardex({data, detalle, nuevaCantidad});
     if (error) {
       console.log("Error al actualizar item:", error);
       throw new Error(error.message);
@@ -147,7 +180,7 @@ export async function transferirItem({
     cantidad,
     sedeOrigen,
     sedeDestino,
-    data
+    data,
   });
 
   // 1. Verificar cantidad en origen
