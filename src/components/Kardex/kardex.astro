@@ -49,13 +49,13 @@ try {
               <td class="border border-gray-300 text-center">{r.detalle}</td>
               <td class="border border-gray-300 text-center">{r.tipo}</td>
               <td class="border border-gray-300 text-center">
-                S/. {r.valor_unitario}
+                S/. {Number(r.valor_unitario).toFixed(2)}
               </td>
               <td class="border border-gray-300 text-center">
                 {r.tipo === "Compra" ? r.cantidad : "-"}
               </td>
               <td class="border border-gray-300 text-center">
-                {r.tipo === "Compra" ? "S/. " + r.valor : "-"}
+                {r.tipo === "Compra" ? "S/. " + Number(r.valor).toFixed(2) : "-"}
               </td>
               <td class="border border-gray-300 text-center">
                 {r.tipo === "Venta" || r.tipo === "Transferencia"
@@ -64,14 +64,14 @@ try {
               </td>
               <td class="border border-gray-300 text-center">
                 {r.tipo === "Venta" || r.tipo === "Transferencia"
-                  ? "S/. " + r.valor
+                  ? "S/. " + Number(r.valor).toFixed(2)
                   : "-"}
               </td>
               <td class="border border-gray-300 text-center">
                 {r.cantidad_saldo}
               </td>
               <td class="border border-gray-300 text-center">
-                S/. {r.valor_saldo}
+                S/. {Number(r.valor_saldo).toFixed(2)}
               </td>
             </tr>
           ))
