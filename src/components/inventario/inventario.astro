@@ -120,7 +120,7 @@ const totalSubtotalPorTipo = rows.reduce((acc, r) => acc + subtotal(r), 0);
         <th class="border border-gray-300">CANTIDAD</th>
         <th class="border border-gray-300">VALOR UNITARIO</th>
         <th class="border border-gray-300">SUBTOTAL</th>
-        <th colspan="3" class="border border-gray-300">ACCION</th>
+        <th colspan="4" class="border border-gray-300">ACCION</th>
       </tr>
     </thead>
 
@@ -156,6 +156,14 @@ const totalSubtotalPorTipo = rows.reduce((acc, r) => acc + subtotal(r), 0);
                   onclick={`import('/src/components/inventario/inventario-modal.js').then(m => m.openDeleteModal(${JSON.stringify({ ...r, tipo })}))`}
                 >
                   Eliminar
+                </button>
+              </td>
+              <td class="border p-2 text-center">
+                <button
+                  class="underline text-cyan-600"
+                  onclick={`import('/src/components/inventario/inventario-modal.js').then(m => m.openAddModal(${JSON.stringify({ ...r, tipo })}))`}
+                >
+                  Agregar
                 </button>
               </td>
               <td class="border p-2 text-center">
