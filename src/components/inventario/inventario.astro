@@ -161,7 +161,7 @@ const totalSubtotalPorTipo = rows.reduce((acc, r) => acc + subtotal(r), 0);
               <td class="border p-2 text-center">
                 <button
                   class="underline text-cyan-600"
-                  onclick={`import('/src/components/inventario/inventario-modal.js').then(m => m.openAddModal(${JSON.stringify({ ...r, tipo })}))`}
+                  onclick={`import('/src/components/inventario/inventario-modal.js').then(m => m.openAddModal(${JSON.stringify({ ...r, tipo, sede })}))`}
                 >
                   Agregar
                 </button>
@@ -311,6 +311,36 @@ const totalSubtotalPorTipo = rows.reduce((acc, r) => acc + subtotal(r), 0);
     </div>
     <div class="flex gap-2 justify-end mt-6">
       <button type="button" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400" onclick="import('/src/components/inventario/inventario-modal.js').then(m => m.closeModal('edit-modal'))">Cancelar</button>
+      <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Guardar</button>
+    </div>
+  </form>
+</div>
+
+<!-- Modal Agregar -->
+<div id="add-modal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 hidden animate-fade-in">
+  <form method="POST" class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg border-2 border-blue-400 relative animate-fade-in" onsubmit="import('/src/components/inventario/inventario-modal.js').then(m => m.submitAddForm(event))">
+    <div class="modal-success"></div>
+    <h2 class="text-xl font-bold mb-4 text-blue-700 text-center">Agregar Inventario</h2>
+    <input type="hidden" id="add-id" name="add-id"/>
+    <input type="hidden" id="add-tipo" name="add-tipo" />
+    <input type="hidden" id="add-sede" name="add-sede" />
+    <input type="hidden" id="add-valor-unitario" name="add-valor-unitario" />
+    <div class="mb-3">
+      <label class="block text-sm font-semibold mb-1">Código</label>
+      <input disabled type="text" id="add-codigo" name="add-codigo" class="border w-full rounded px-2 py-1 focus:ring-2 focus:ring-blue-300"/>
+    </div>
+    <div class="mb-3">
+      <label class="block text-sm font-semibold mb-1">Nombre</label>
+      <textarea disabled id="add-nombre" name="add-nombre" class="border w-full rounded px-2 py-1 focus:ring-2 focus:ring-blue-300"></textarea>
+    </div>
+    
+    <div class="mb-3">
+      <label class="block text-sm font-semibold mb-1">Cantidad</label>
+      <input type="number" id="add-cantidad" name="add-cantidad" class="border w-full rounded px-2 py-1" min="0" step="1" required />
+    </div>
+
+    <div class="flex gap-2 justify-end mt-6">
+      <button type="button" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400" onclick="import('/src/components/inventario/inventario-modal.js').then(m => m.closeModal('add-modal'))">Cancelar</button>
       <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Guardar</button>
     </div>
   </form>
