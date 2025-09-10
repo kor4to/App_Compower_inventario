@@ -15,6 +15,10 @@ export const POST: APIRoute = async ({ request }) => {
       const { tipo, sede, ...data } = params;
       await agregarInventario({ tipo, data, sede });
       return new Response("OK");
+    } else if (action === "actualizar") {
+      const { tipo, sede, ...data } = params;
+      await actualizarInventario({ tipo, data, sede });
+      return new Response("OK");
     } else {
       return new Response("Acción no soportada", { status: 400 });
     }
@@ -26,6 +30,7 @@ import { supabase } from "../../../lib/supabase/SupabaseClient";
 import type { Tipo } from "./get";
 import type { Sede } from "./get";
 import { tableName } from "./get";
+import { buscarItemPorCodigo } from "./transfer";
 
 // Editar un registro
 export async function editarInventario({
@@ -43,6 +48,30 @@ export async function editarInventario({
   const { error } = await supabase.from(table).update(data).eq("id", id);
 
   console.log("Inventario editado:", data, " en la tabla:", table);
+  if (error) throw new Error(error.message);
+  return true;
+}
+export async function actualizarInventario({
+  tipo,
+  sede,
+  data,
+}: {
+  tipo: Tipo;
+  sede: Sede;
+  data: any;
+}) {
+  const table = tableName(tipo, sede);
+  const itemExistente = await buscarItemPorCodigo({ tipo, sedeDestino: sede, codigo: data.codigo });
+  if (!itemExistente) {
+    throw new Error("El item con el código especificado no existe en la sede.");
+  }
+  // Obtener la cantidad actual
+  const cantidadActual = Number(itemExistente?.cantidad ?? 0);
+  const nuevaCantidad = cantidadActual + Number(data?.cantidad ?? 0);
+  const { error } = await supabase.from(table).update({ ...data, cantidad: nuevaCantidad }).eq("codigo", data?.codigo);
+  const detalle = "Compra de " + (data?.nombre ?? "N/A");
+  await actualizarKardex({ data: { ...data, nuevaCantidad: nuevaCantidad }, detalle });
+  console.log("Inventario actualizado:", { ...data, cantidad: nuevaCantidad }, " en la tabla:", table);
   if (error) throw new Error(error.message);
   return true;
 }
@@ -78,6 +107,30 @@ export async function agregarKardex({
     cantidad: data?.cantidad ?? 0,
     valor,
     cantidad_saldo: data?.cantidad ?? 0,
+    valor_saldo: valor,
+  });
+
+  if (error) {
+    console.log(error.message);
+    throw new Error(error.message);
+  }
+}
+
+export async function actualizarKardex({
+  data,
+  detalle,
+}: {
+  data: any;
+  detalle: string;
+}) {
+  const valor = Number(data?.valor_unitario ?? 0) * Number(data?.cantidad ?? 0);
+  const { error } = await supabase.from("kardex").insert({
+    tipo: "Compra",
+	valor_unitario: data?.valor_unitario ?? 0,
+    detalle,
+    cantidad: data?.cantidad ?? 0,
+    valor,
+    cantidad_saldo: data?.nuevaCantidad ?? 0,
     valor_saldo: valor,
   });
 
