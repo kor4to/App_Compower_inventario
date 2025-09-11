@@ -2,6 +2,7 @@
 import DashboardLayout from "../../layouts/DashboardLayout.astro";
 import Inventario from "../../components/inventario/inventario.astro";
 import { supabase } from "../../lib/supabase/SupabaseClient";
+import { getDashboardData } from "../../lib/dashboard/dashboardData";
 
 const { cookies, redirect } = Astro;
 
@@ -29,7 +30,47 @@ if (error) {
 }
 
 const email = data?.user?.email;
+const { almacenValores, totalTransferencias, resumenCentroCosto } = await getDashboardData();
+
+
+
 ---
 <DashboardLayout title="panel de control">
-      <h1>Bienvenido {email}</h1>
+  <h1>Bienvenido {email}</h1>
   <p>Estamos felices de verte aquí</p>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 my-8">
+    <div class="bg-white rounded shadow p-6 text-center">
+      <h2 class="text-lg font-bold mb-2">Valor total almacén Cusco</h2>
+      <div class="text-2xl text-green-700 font-bold">S/ {almacenValores.cusco?.toLocaleString('es-PE', {minimumFractionDigits:2}) ?? '0.00'}</div>
+    </div>
+    <div class="bg-white rounded shadow p-6 text-center">
+      <h2 class="text-lg font-bold mb-2">Valor total almacén Surco</h2>
+      <div class="text-2xl text-green-700 font-bold">S/ {almacenValores.surco?.toLocaleString('es-PE', {minimumFractionDigits:2}) ?? '0.00'}</div>
+    </div>
+    <div class="bg-white rounded shadow p-6 text-center">
+      <h2 class="text-lg font-bold mb-2">Total transferencias realizadas</h2>
+      <div class="text-2xl text-blue-700 font-bold">{totalTransferencias}</div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded shadow p-6 mt-8">
+    <h2 class="text-lg font-bold mb-4">Resumen por Centro de Costo</h2>
+    <table class="min-w-full border">
+      <thead>
+        <tr class="bg-gray-100">
+          <th class="py-2 px-4 border">Centro de Costo</th>
+          <th class="py-2 px-4 border">Valor Total Asignado (S/)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {Object.entries(resumenCentroCosto).map(([centro, total]) => (
+          <tr>
+            <td class="py-2 px-4 border">{centro}</td>
+            <td class="py-2 px-4 border">{Number(total).toLocaleString('es-PE', {minimumFractionDigits:2})}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</DashboardLayout>

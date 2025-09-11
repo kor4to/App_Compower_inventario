@@ -122,42 +122,62 @@ const currentSede = Astro.url.searchParams.get('sede') || 'surco';
               </li>
             )}
             {role === 'logistics' && (
-              <li class="group">
-                <button
-                  type="button"
-                  class="flex items-center w-full hover:text-blue-300 focus:outline-none"
-                  onclick="this.nextElementSibling.classList.toggle('hidden')"
-                >
-                  <span>📦</span> Inventario
-                  <svg
-                    class="ml-auto w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    viewBox="0 0 24 24"
-                    ><path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="M19 9l-7 7-7-7"></path></svg
+              <li>
+                  <a
+                    href="/Module-start/dashboard"
+                    class="hover:text-blue-300 flex items-center gap-2"
                   >
-                </button>
-                <ul
-                  class="ml-6 mt-1 hidden bg-blue-400 rounded group-hover:block"
-                >
-                  <li>
-                    <a href="#" class="block py-1 px-2 hover:text-blue-200"
-                      >Activos</a>
-                  </li>
-                  <li>
-                    <a href="#" class="block py-1 px-2 hover:text-blue-200"
-                      >Materiales</a>
-                  </li>
-                  <li>
-                    <a href="#" class="block py-1 px-2 hover:text-blue-200"
-                      >Herramientas</a>
-                  </li>
-                </ul>
-              </li>
+                    <span>🏠</span> Inicio
+                  </a>
+                </li>
+                <li class="group">
+                  <button
+                    type="button"
+                    class="flex items-center w-full hover:text-blue-300 focus:outline-none"
+                    onclick="this.nextElementSibling.classList.toggle('hidden')"
+                  >
+                    <span>📦</span> Inventario
+                    <svg
+                      class="ml-auto w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      viewBox="0 0 24 24"
+                      ><path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M19 9l-7 7-7-7"></path></svg
+                    >
+                  </button>
+                  <ul
+                    class="ml-6 mt-1 hidden bg-blue-400 rounded group-hover:block"
+                  >
+                    <li>
+                      <a href="/Module-Inventory/inventory?tipo=activo&sede=surco" class="block py-1 px-2 hover:text-blue-200"
+                        >Activos (Surco)</a>
+                    </li>
+                    <li>
+                      <a href="/Module-Inventory/inventory?tipo=material&sede=surco" class="block py-1 px-2 hover:text-blue-200"
+                        >Materiales (Surco)</a>
+                    </li>
+                    <li>
+                      <a href="/Module-Inventory/inventory?tipo=herramienta&sede=surco" class="block py-1 px-2 hover:text-blue-200"
+                        >Herramientas (Surco)</a>
+                    </li>
+                    <li>
+                      <a href="/Module-Inventory/inventory?tipo=activo&sede=cusco" class="block py-1 px-2 hover:text-blue-200"
+                        >Activos (Cusco)</a>
+                    </li>
+                    <li>
+                      <a href="/Module-Inventory/inventory?tipo=material&sede=cusco" class="block py-1 px-2 hover:text-blue-200"
+                        >Materiales (Cusco)</a>
+                    </li>
+                    <li>
+                      <a href="/Module-Inventory/inventory?tipo=herramienta&sede=cusco" class="block py-1 px-2 hover:text-blue-200"
+                        >Herramientas (Cusco)</a>
+                    </li>
+                  </ul>
+                </li>
             )}
           </ul>
         </nav>
