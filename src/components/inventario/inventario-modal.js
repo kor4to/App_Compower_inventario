@@ -21,62 +21,105 @@ export async function submitTransferForm(e) {
   const sede_origen = form["transfer-sede-origen"].value;
   const nombre = form["transfer-nombre"].value;
   const cantidad = Number(form["transfer-cantidad"].value);
-  const sede_destino = form["transfer-sede-destino"].value;
+  const destinoTipo = form["transfer-destino-tipo"].value;
+  const codigo = form["transfer-codigo"] ? form["transfer-codigo"].value : "";
+  const categoria = form["transfer-categoria"] ? form["transfer-categoria"].value : "";
+  const unid_med = form["transfer-unid_med"] ? form["transfer-unid_med"].value : "";
+  const valor_unitario = form["transfer-valor_unitario"] ? form["transfer-valor_unitario"].value : "";
 
   let errorMsg = "";
   if (!cantidad || cantidad <= 0) errorMsg = "Cantidad inválida.";
-  else if (!sede_destino || sede_destino === sede_origen)
-    errorMsg = "Selecciona un almacén destino diferente.";
-  if (errorMsg) {
-    showModalError("transfer-modal", errorMsg);
+  if (!destinoTipo) errorMsg = "Selecciona a dónde transferir.";
+
+  if (destinoTipo === "almacen") {
+    const sede_destino = form["transfer-sede-destino"].value;
+    if (!sede_destino || sede_destino === sede_origen)
+      errorMsg = "Selecciona un almacén destino diferente.";
+    if (errorMsg) {
+      showModalError("transfer-modal", errorMsg);
+      return;
+    }
+    // Llamar al endpoint de transferencia de almacén (como antes)
+    const data = {
+      nombre,
+      categoria,
+      unid_med,
+      valor_unitario,
+    };
+    const res = await fetch("/api/inventario/transfer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "transferir",
+        tipo,
+        codigo,
+        cantidad,
+        sede_origen,
+        sede_destino,
+        data,
+      }),
+    });
+    if (res.ok) {
+      showModalSuccess("transfer-modal", "¡Transferencia realizada!");
+      setTimeout(
+        () => (window.location.href = `?tipo=${tipo}&sede=${sede_origen}`),
+        1200
+      );
+    } else {
+      const errText = await res.text();
+      showModalError("transfer-modal", errText || "Error al transferir");
+    }
     return;
   }
 
-  // Aquí puedes agregar los demás datos necesarios para la transferencia
-  // Por ejemplo, código, categoría, unid_med, valor_unitario, etc.
-  const codigo = form["transfer-codigo"] ? form["transfer-codigo"].value : "";
-  const categoria = form["transfer-categoria"]
-    ? form["transfer-categoria"].value
-    : "";
-  const unid_med = form["transfer-unid_med"]
-    ? form["transfer-unid_med"].value
-    : "";
-  const valor_unitario = form["transfer-valor_unitario"]
-    ? form["transfer-valor_unitario"].value
-    : "";
-
-  // Construir el objeto data para el backend
-  const data = {
-    nombre,
-    categoria,
-    unid_med,
-    valor_unitario,
-  };
-
-  // Llamar al endpoint de transferencia
-  const res = await fetch("/api/inventario/transfer", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      action: "transferir",
-      tipo,
-      codigo,
-      cantidad,
-      sede_origen,
-      sede_destino,
-      data,
-    }),
-  });
-
-  if (res.ok) {
-    showModalSuccess("transfer-modal", "¡Transferencia realizada!");
-    setTimeout(
-      () => (window.location.href = `?tipo=${tipo}&sede=${sede_origen}`),
-      1200
-    );
-  } else {
-    const errText = await res.text();
-    showModalError("transfer-modal", errText || "Error al transferir");
+  if (destinoTipo === "centro_costo") {
+    const centro_costo_id = form["transfer-centro-costo"].value;
+    const centro_costo_option = form["transfer-centro-costo"].selectedOptions[0];
+    if (!centro_costo_id) {
+      showModalError("transfer-modal", "Selecciona un centro de costo destino.");
+      return;
+    }
+    // El código del centro de costo es el value (codigo), el nombre es la columna proyecto (que está en el texto después del guion)
+    let centro_costo = centro_costo_id;
+    let centro_de_costo_nombre = "";
+    if (centro_costo_option) {
+      const text = centro_costo_option.text;
+      if (text.includes("-")) {
+        centro_de_costo_nombre = text.split("-").slice(1).join("-").trim();
+      } else {
+        centro_de_costo_nombre = text.trim();
+      }
+    }
+    // Llamar al endpoint de centro de costo
+    const res = await fetch("/api/centro_costos/transfer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        centro_costo,
+        item_id: codigo,
+        cantidad,
+        centro_de_costo_nombre,
+        valor: valor_unitario,
+        item_name: nombre,
+        tipo,
+        sede: sede_origen,
+      }),
+    });
+    if (res.ok) {
+      showModalSuccess("transfer-modal", "¡Transferencia realizada!");
+      setTimeout(
+        () => (window.location.href = `?tipo=${tipo}&sede=${sede_origen}`),
+        1200
+      );
+    } else {
+      const errText = await res.text();
+      showModalError("transfer-modal", errText || "Error al transferir");
+    }
+    return;
+  }
+  if (errorMsg) {
+    showModalError("transfer-modal", errorMsg);
+    return;
   }
 }
 // inventario-modal.js

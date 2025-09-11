@@ -30,9 +30,7 @@ import { tableName } from "./get";
 
 // Buscar un item por código en una sede/tipo
 export async function buscarItemPorCodigo({
-  tipo,
-  sedeDestino,
-  codigo,
+  tipo, sedeDestino, codigo,
 }: {
   tipo: Tipo;
   sedeDestino: Sede;

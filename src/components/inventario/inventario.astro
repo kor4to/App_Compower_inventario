@@ -33,8 +33,23 @@ try {
   rows = [];
 }
 
+
 // Normalizar categorías vacías
 rows = rows.map(r => ({ ...r, categoria: r.categoria?.trim() || "sin categoria" }));
+
+// Obtener centros de costo desde Supabase
+let centrosCostos: { id: number; codigo: string; proyecto: string }[] = [];
+try {
+  const { data, error } = await supabase
+    .from("centro_costo")
+    .select("id, codigo, proyecto")
+    .order("codigo", { ascending: true });
+  if (error) throw error;
+  centrosCostos = data ?? [];
+} catch (e) {
+  console.error("Error cargando centros de costo:", e);
+  centrosCostos = [];
+}
 
 // Filtrar por búsqueda
 let filteredRows = rows;
@@ -56,7 +71,7 @@ const categoriasUnicas = Array.from(new Set(rows.map(r => r.categoria || "sin ca
 const totalRows = filteredRows.length;
 const totalPages = Math.ceil(totalRows / pageSize);
 const paginatedRows = filteredRows.slice((page - 1) * pageSize, page * pageSize);
-
+const role = Astro.cookies.get('sb-role')?.value ?? '';
 // Calcular el subtotal total por tipo (no por búsqueda)
 const totalSubtotalPorTipo = rows.reduce((acc, r) => acc + subtotal(r), 0);
 ---
@@ -120,7 +135,12 @@ const totalSubtotalPorTipo = rows.reduce((acc, r) => acc + subtotal(r), 0);
         <th class="border border-gray-300">CANTIDAD</th>
         <th class="border border-gray-300">VALOR UNITARIO</th>
         <th class="border border-gray-300">SUBTOTAL</th>
-        <th colspan="4" class="border border-gray-300">ACCION</th>
+        {role === 'admin' && (
+          <th colspan="4" class="border border-gray-300">ACCION</th>
+        )}
+        {role === 'logistics' && (
+          <th colspan="2" class="border border-gray-300">ACCION</th>
+        )}
       </tr>
     </thead>
 
@@ -142,8 +162,9 @@ const totalSubtotalPorTipo = rows.reduce((acc, r) => acc + subtotal(r), 0);
               <td class="border p-2 text-right">{Number(r.cantidad ?? 0)}</td>
               <td class="border p-2 text-right">{money(r.valor_unitario)}</td>
               <td class="border p-2 text-right">{money(subtotal(r))}</td>
+                {role === 'admin' && (
               <td class="border p-2 text-center">
-                <button
+                  <button
                   class="underline text-blue-600"
                   onclick={`import('/src/components/inventario/inventario-modal.js').then(m => m.openEditModal(${JSON.stringify({ ...r, tipo, sede })}))`}
                 >
@@ -158,6 +179,9 @@ const totalSubtotalPorTipo = rows.reduce((acc, r) => acc + subtotal(r), 0);
                   Eliminar
                 </button>
               </td>
+                )}
+                
+
               <td class="border p-2 text-center">
                 <button
                   class="underline text-cyan-600"
@@ -262,12 +286,35 @@ const totalSubtotalPorTipo = rows.reduce((acc, r) => acc + subtotal(r), 0);
       <label class="block text-sm font-semibold mb-1">Cantidad a transferir</label>
       <input type="number" id="transfer-cantidad" name="transfer-cantidad" class="border w-full rounded px-2 py-1" min="1" required />
     </div>
+    <!-- Nuevo campo: ¿A dónde desea transferir? -->
     <div class="mb-3">
+      <label class="block text-sm font-semibold mb-1">¿A dónde desea transferir?</label>
+      <select id="transfer-destino-tipo" name="transfer-destino-tipo" class="border w-full rounded px-2 py-1" required onchange="
+        document.getElementById('transfer-almacen-destino').style.display = this.value === 'almacen' ? 'block' : 'none';
+        document.getElementById('transfer-centro-costo-destino').style.display = this.value === 'centro_costo' ? 'block' : 'none';
+      ">
+        <option value="">Seleccione una opción</option>
+        <option value="almacen">Almacén</option>
+        <option value="centro_costo">Centro de Costo</option>
+      </select>
+    </div>
+    <!-- Selección de almacén destino -->
+    <div class="mb-3" id="transfer-almacen-destino" style="display:none">
       <label class="block text-sm font-semibold mb-1">Almacén destino</label>
-      <select id="transfer-sede-destino" name="transfer-sede-destino" class="border w-full rounded px-2 py-1" required>
+      <select id="transfer-sede-destino" name="transfer-sede-destino" class="border w-full rounded px-2 py-1">
         <option value="">Selecciona un almacén</option>
         <option value="surco">Surco</option>
         <option value="cusco">Cusco</option>
+      </select>
+    </div>
+    <!-- Selección de centro de costo destino -->
+    <div class="mb-3" id="transfer-centro-costo-destino" style="display:none">
+      <label class="block text-sm font-semibold mb-1">Centro de Costo destino</label>
+      <select id="transfer-centro-costo" name="transfer-centro-costo" class="border w-full rounded px-2 py-1">
+        <option value="">Selecciona un centro de costo</option>
+        {centrosCostos.map(cc => (
+          <option value={cc.codigo} data-proyecto={cc.proyecto}>{cc.codigo} - {cc.proyecto}</option>
+        ))}
       </select>
     </div>
     <div class="flex gap-2 justify-end mt-6">

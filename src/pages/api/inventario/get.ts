@@ -25,3 +25,4 @@ export function money(n:number | null | undefined) {
 export function subtotal(r: any){
     return Number(r.cantidad ?? 0) * Number(r.valor_unitario ?? 0);
 }
+
