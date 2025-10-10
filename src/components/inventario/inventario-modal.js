@@ -12,6 +12,7 @@ export function openTransferModal(row) {
   document.getElementById("transfer-cantidad").value = "";
   document.getElementById("transfer-sede-destino").value = "";
   modal.classList.remove("hidden");
+  modal.classList.add("flex");
 }
 
 export async function submitTransferForm(e) {
@@ -117,6 +118,51 @@ export async function submitTransferForm(e) {
     }
     return;
   }
+  if (destinoTipo === "site") {
+    const site_id = form["transfer-site"].value;
+    const site_option = form["transfer-site"].selectedOptions[0];
+    if (!site_id) {
+      showModalError("transfer-modal", "Selecciona un sitio destino.");
+      return;
+    }
+    // El código del sitio es el value (codigo), el nombre es la columna proyecto (que está en el texto después del guion)
+    let site = site_id;
+    let site_nombre = "";
+    if (site_option) {
+      const text = site_option.text;
+      if (text.includes("-")) {
+        site_nombre = text.split("-").slice(1).join("-").trim();
+      } else {
+        site_nombre = text.trim();
+      }
+    }
+    // Llamar al endpoint de sitio
+    const res = await fetch("/api/sites/transfer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        centro_costo,
+        item_id: codigo,
+        cantidad,
+        centro_de_costo_nombre,
+        valor: valor_unitario,
+        item_name: nombre,
+        tipo,
+        sede: sede_origen,
+      }),
+    });
+    if (res.ok) {
+      showModalSuccess("transfer-modal", "¡Transferencia realizada!");
+      setTimeout(
+        () => (window.location.href = `?tipo=${tipo}&sede=${sede_origen}`),
+        1200
+      );
+    } else {
+      const errText = await res.text();
+      showModalError("transfer-modal", errText || "Error al transferir");
+    }
+    return;
+  }
   if (errorMsg) {
     showModalError("transfer-modal", errorMsg);
     return;
@@ -129,11 +175,13 @@ export function openEditModal(row) {
   const modal = document.getElementById("edit-modal");
   fillEditForm(row);
   modal.classList.remove("hidden");
+  modal.classList.add("flex");
 }
 
 export function openNewModal() {
   const modal = document.getElementById("new-modal");
   modal.classList.remove("hidden");
+  modal.classList.add("flex");
 }
 
 export function openDeleteModal(row) {
@@ -142,16 +190,22 @@ export function openDeleteModal(row) {
   document.getElementById("delete-tipo").value = row.tipo;
   document.getElementById("delete-nombre").textContent = row.nombre;
   modal.classList.remove("hidden");
+  modal.classList.add("flex");
 }
 
 export function openAddModal(row) {
   const modal = document.getElementById("add-modal");
   fillAddForm(row);
   modal.classList.remove("hidden");
+  modal.classList.add("flex");
 }
 
 export function closeModal(id) {
-  document.getElementById(id).classList.add("hidden");
+  const m = document.getElementById(id);
+  if (m) {
+    m.classList.add("hidden");
+    m.classList.remove("flex");
+  }
 }
 
 function fillAddForm(row) {
@@ -167,8 +221,8 @@ function fillEditForm(row) {
   document.getElementById("edit-id").value = row.id;
   document.getElementById("edit-tipo").value = row.tipo;
   document.getElementById("edit-sede").value = row.sede;
-  document.getElementById("edit-codigo").value = row.codigo ?? "";
-  document.getElementById("edit-nombre").value = row.nombre;
+  document.getElementById("edit-codigo").value = (row.codigo ?? "").toUpperCase();
+  document.getElementById("edit-nombre").value = (row.nombre ?? "").toUpperCase();
   document.getElementById("edit-categoria").value = row.categoria ?? "";
   document.getElementById("edit-unid_med").value = row.unid_med ?? "";
   document.getElementById("edit-cantidad").value = row.cantidad ?? 0;
@@ -180,8 +234,8 @@ export async function submitEditForm(e) {
   e.preventDefault();
   const form = e.target;
   // Validaciones
-  const nombre = form["edit-nombre"].value.trim();
-  const codigo = form["edit-codigo"].value.trim();
+  const nombre = form["edit-nombre"].value.toUpperCase();
+  const codigo = form["edit-codigo"].value.toUpperCase();
   const cantidad = form["edit-cantidad"].value;
   const valor_unitario = form["edit-valor_unitario"].value;
   let errorMsg = "";
@@ -195,6 +249,7 @@ export async function submitEditForm(e) {
     showModalError("edit-modal", errorMsg);
     return;
   }
+
   const data = {
     id: form["edit-id"].value,
     tipo: form["edit-tipo"].value,
@@ -231,8 +286,10 @@ export async function submitAddForm(e) {
   e.preventDefault();
   const form = e.target;
   // Validaciones
-  const codigo = form["add-codigo"].value.trim();
-  const nombre = form["add-nombre"].value.trim();
+  const codigo_minus = form["add-codigo"].value.trim();
+  const nombre_minus = form["add-nombre"].value.trim();
+  const codigo = codigo_minus.toUpperCase();
+  const nombre = nombre_minus.toUpperCase();
   const cantidad = form["add-cantidad"].value;
   const valor_unitario = form["add-valor-unitario"].value;
   let errorMsg = "";
@@ -327,10 +384,6 @@ export async function submitNewForm(e) {
 
   if (res.ok) {
     showModalSuccess("new-modal", "¡Agregado correctamente!");
-    setTimeout(
-      () => (window.location.href = `?tipo=${tipo}&sede=${sede}`),
-      5000
-    );
     setTimeout(
       () => (window.location.href = `?tipo=${tipo}&sede=${sede}`),
       5000

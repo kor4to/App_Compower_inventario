@@ -125,8 +125,7 @@ export async function sumarOAgregarItem({
   if (item) {
     // Sumar cantidad
     const nuevaCantidad = Number(item.cantidad) + Number(cantidad);
-    const detalle = "Transferencia de " + (data?.nombre ?? "N/A") + " desde " + sedeOrigen + " hasta " + sedeDestino;
-    
+   
     const { error } = await supabase
     .from(tabla)
     .update({ cantidad: nuevaCantidad })
@@ -141,7 +140,7 @@ export async function sumarOAgregarItem({
     const { error } = await supabase
       .from(tabla)
       .insert([{ ...data, codigo, cantidad }]);
-    const detalle= "Transferencia de " + (data?.nombre ?? "N/A") + " desde " + sedeOrigen + " hasta " + sedeDestino;
+    const detalle= "Transferencia de " + (data?.codigo ?? "N/A") + " desde " + sedeOrigen + " hasta " + sedeDestino;
     console.log("data: ", data)
     if (error) {
       console.log("Error al insertar item:", error);
@@ -181,7 +180,7 @@ export async function transferirItem({
 
   // 2. Sumar o agregar en destino
   await sumarOAgregarItem({ tipo, sedeOrigen, sedeDestino, codigo, data, cantidad });
- const detalle = "Transferencia de " + (data?.nombre ?? "N/A") + " desde " + sedeOrigen + " hasta " + sedeDestino;
+ const detalle = "Transferencia de " + (codigo) + " desde " + sedeOrigen + " hasta " + sedeDestino;
     
   // 3. Registrar en kardex: salida en origen
   await transferKardex({

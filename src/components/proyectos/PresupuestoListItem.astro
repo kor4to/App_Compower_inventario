@@ -1,0 +1,96 @@
+---
+import "../../styles/global.css";
+import { supabase } from "../../lib/supabase/SupabaseClient";
+import EditarCC from "./PresupuestoEditar.astro";
+const {
+  id,
+  codigo,
+  cliente,
+  coordinador,
+  proyecto,
+  presupuesto,
+  estado,
+  onDelete,
+  onEdit,
+} = Astro.props;
+
+let consumido = 0;
+let disponible = 0;
+try {
+  const { data, error } = await supabase
+    .from("centro_costo_inventario")
+    .select("cantidad, valor")
+    .eq("centro_costo", codigo);
+
+  if (data && Array.isArray(data)) {
+    consumido = data.reduce(
+      (sum, item) => sum + Number(item.cantidad) * Number(item.valor),
+      0
+    );
+  } else {
+    consumido = 0;
+  }
+} catch (e) {
+  console.error("Error en PresupuestoListItem:", e);
+}
+disponible = presupuesto - consumido;
+---
+
+<tr>
+  <td class="hidden">{id}</td>
+  <td class="p-2 border-b">{codigo}</td>
+  <td class="p-2 border-b">{cliente}</td>
+  <td class="p-2 border-b">{coordinador}</td>
+  <td class="p-2 border-b">{proyecto}</td>
+  <td class="p-2 border-b"
+    >{
+      Number(presupuesto).toLocaleString("es-PE", { minimumFractionDigits: 2 })
+    }</td
+  >
+  <td class="p-2 border-b">
+    {Number(consumido).toLocaleString("es-PE", { minimumFractionDigits: 2 })}
+  </td>
+
+  {disponible <= 0 ? (
+    <td class="p-2 border-b text-red-600 font-bold">
+      {Number(disponible).toLocaleString("es-PE", {
+        minimumFractionDigits: 2,
+      })}
+    </td>
+  ) : (
+    <td class="p-2 border-b">
+      {Number(disponible).toLocaleString("es-PE", {
+        minimumFractionDigits: 2,
+      })}
+    </td>
+  )}
+
+  {
+    estado === 0 ? (
+      <td class="p-2 border-b text-right text-green-600 font-bold">Activo</td>
+    ) : (
+      <td class="p-2 border-b text-right text-red-600 font-bold">Inactivo</td>
+    )
+  }
+
+  <td class="p-2 border-b text-center">
+    <button
+      class="text-blue-600 hover:underline mr-2"
+      type="button"
+      onclick={`import('/src/components/proyectos/centro-costo-modal.js').then(m => m.openEditModal({
+    id: '${id}',
+    codigo: '${codigo}',
+    cliente: '${cliente}',
+    coordinador: '${coordinador}',
+    proyecto: '${proyecto}',
+    presupuesto: ${presupuesto}
+  }))`}>Editar</button
+    >
+    <button
+      class="text-red-600 hover:underline"
+      type="button"
+      onclick={`window.dispatchEvent(new CustomEvent('presupuesto-delete',{detail:'${codigo}'}))`}>Eliminar</button
+    >
+  </td>
+</tr>
+

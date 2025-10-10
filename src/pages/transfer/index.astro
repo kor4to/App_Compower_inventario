@@ -1,0 +1,136 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro'
+
+const title = 'Transferencias'
+---
+
+<DashboardLayout>
+  <main class="p-6">
+    <h1 class="text-2xl font-semibold mb-4">Transferencias</h1>
+
+    <form id="transfer-form" class="space-y-4 bg-white p-4 rounded shadow">
+      <div class="grid grid-cols-3 gap-4">
+        <div>
+          <label class="block text-sm font-medium">Tipo</label>
+          <select id="tipo" class="mt-1 block w-full border rounded p-2">
+            <option value="producto">Producto</option>
+            <option value="insumo">Insumo</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium">Sede origen</label>
+          <select id="sede_origen" class="mt-1 block w-full border rounded p-2">
+            <option value="sede1">Sede 1</option>
+            <option value="sede2">Sede 2</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium">Cantidad</label>
+          <input id="cantidad" type="number" class="mt-1 block w-full border rounded p-2" />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-4 gap-4 pt-2">
+        <div>
+          <label class="block text-sm font-medium">Código</label>
+          <input id="codigo" class="mt-1 block w-full border rounded p-2" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium">Nombre</label>
+          <input id="nombre" class="mt-1 block w-full border rounded p-2" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium">Unidad</label>
+          <input id="unidad" class="mt-1 block w-full border rounded p-2" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium">Valor unitario</label>
+          <input id="valor_unitario" class="mt-1 block w-full border rounded p-2" />
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button id="add-item" type="button" class="px-3 py-1 bg-blue-600 text-white rounded">Agregar item</button>
+        <button id="clear-item" type="button" class="px-3 py-1 bg-gray-200 rounded">Limpiar</button>
+      </div>
+
+      <div class="pt-4">
+        <table id="items-table" class="w-full table-auto border-collapse">
+          <thead>
+            <tr class="bg-gray-100"><th class="p-2">Código</th><th class="p-2">Nombre</th><th class="p-2">Cantidad</th><th class="p-2">Acción</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <hr class="my-4" />
+
+      <div class="grid grid-cols-3 gap-4">
+        <div>
+          <label class="block text-sm font-medium">Destino tipo</label>
+          <select id="destino_tipo" class="mt-1 block w-full border rounded p-2">
+            <option value="almacen">Almacén</option>
+            <option value="centro_costo">Centro de costo</option>
+            <option value="site">Site</option>
+          </select>
+        </div>
+        <div id="destino-almacen" class="">
+          <label class="block text-sm font-medium">Sede destino</label>
+          <select id="sede_destino" class="mt-1 block w-full border rounded p-2">
+            <option value="sede1">Sede 1</option>
+            <option value="sede2">Sede 2</option>
+          </select>
+        </div>
+        <div id="destino-centro_costo" class="hidden">
+          <label class="block text-sm font-medium">Centro costo</label>
+          <input id="centro_costo" class="mt-1 block w-full border rounded p-2" />
+        </div>
+        <div id="destino-site" class="hidden">
+          <label class="block text-sm font-medium">Site destino</label>
+          <input id="site_destino" class="mt-1 block w-full border rounded p-2" />
+        </div>
+      </div>
+
+      <hr class="my-4" />
+
+      <div class="grid grid-cols-3 gap-4">
+        <div>
+          <label class="block text-sm font-medium">Número guía</label>
+          <input id="guia_numero" class="mt-1 block w-full border rounded p-2" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium">Fecha</label>
+          <input id="guia_fecha" type="date" class="mt-1 block w-full border rounded p-2" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium">Transportista</label>
+          <input id="guia_transportista" class="mt-1 block w-full border rounded p-2" />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 pt-4">
+        <div>
+          <label class="block text-sm font-medium">Motivo</label>
+          <select id="motivo" class="mt-1 block w-full border rounded p-2">
+            <option value="02">02 - Venta</option>
+            <option value="05">05 - Traslado entre establecimientos</option>
+            <option value="08">08 - Traslado por encargo</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium">RUC entidad destino</label>
+          <input id="ruc_destino" class="mt-1 block w-full border rounded p-2" />
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-4">
+        <button id="preview-guia" type="button" class="px-3 py-1 bg-yellow-500 text-white rounded">Previsualizar guía</button>
+        <button type="submit" class="px-3 py-1 bg-green-600 text-white rounded">Generar guía y transferir</button>
+      </div>
+
+      <div id="transfer-result" class="pt-4"></div>
+    </form>
+
+  <script type="module" src="/src/pages/transfer/transfer-client.js"></script>
+  </main>
+</DashboardLayout>

@@ -23,7 +23,11 @@ const page = Number(Astro.url.searchParams.get("page") ?? 1);
 const pageSize = 15;
 const search = Astro.url.searchParams.get("search")?.toLowerCase() ?? "";
 const searchBy = Astro.url.searchParams.get("searchBy") ?? "nombre";
+
 const categoriaFiltro = Astro.url.searchParams.get("categoria") ?? "";
+// Ordenamiento
+const sortBy = Astro.url.searchParams.get("sortBy") ?? "";
+const sortDir = Astro.url.searchParams.get("sortDir") ?? "desc"; // default descendente
 
 let rows: any[] = [];
 try {
@@ -32,6 +36,7 @@ try {
   console.error(e);
   rows = [];
 }
+
 
 
 // Normalizar categorías vacías
@@ -50,6 +55,35 @@ try {
   console.error("Error cargando centros de costo:", e);
   centrosCostos = [];
 }
+// Obtener sitios desde Supabase
+let sites: { id: number; nombre: string; cc_origen: string}[] = [];
+try {
+  const { data, error } = await supabase
+    .from("site")
+    .select("id, nombre, cc_origen")
+    
+    .order("id", { ascending: true });
+  if (error) throw error;
+  sites = data ?? [];
+} catch (e) {
+  console.error("Error cargando sitios:", e);
+  sites = [];
+}
+
+// Obtener nombres únicos de sitios
+const nombresUnicos = Array.from(new Set(sites.map(s => s.nombre || "nombre desconocido")));
+
+const sitesConVariosCC = Array.from(
+  new Set(
+    sites
+      .filter((site, _, arr) =>
+        arr.filter(s => s.nombre === site.nombre)
+           .map(s => s.cc_origen)
+           .filter((cc, i, a) => a.indexOf(cc) === i).length > 1
+      )
+      .map(site => site.nombre)
+  )
+);
 
 // Filtrar por búsqueda
 let filteredRows = rows;
@@ -63,6 +97,25 @@ if (search) {
 // Filtrar por categoría
 if (categoriaFiltro) {
   filteredRows = filteredRows.filter(r => (r.categoria || "sin categoria") === categoriaFiltro);
+}
+
+// ORDENAMIENTO
+if (["cantidad", "valor_unitario", "subtotal"].includes(sortBy)) {
+  filteredRows = filteredRows.slice().sort((a, b) => {
+    let aValue = 0, bValue = 0;
+    if (sortBy === "cantidad") {
+      aValue = Number(a.cantidad ?? 0);
+      bValue = Number(b.cantidad ?? 0);
+    } else if (sortBy === "valor_unitario") {
+      aValue = Number(a.valor_unitario ?? 0);
+      bValue = Number(b.valor_unitario ?? 0);
+    } else if (sortBy === "subtotal") {
+      aValue = subtotal(a) ?? 0;
+      bValue = subtotal(b) ?? 0;
+    }
+    if (sortDir === "asc") return aValue - bValue;
+    return bValue - aValue;
+  });
 }
 
 // Obtener categorías únicas para el filtro
@@ -115,7 +168,8 @@ const totalSubtotalPorTipo = rows.reduce((acc, r) => acc + subtotal(r), 0);
           <option value={cat} selected={categoriaFiltro === cat}>{cat}</option>
         ))}
       </select>
-      <button type="submit" class="px-3 py-1 bg-blue-600 text-white rounded">Filtrar</button>
+  <button type="submit" class="px-3 py-1 bg-blue-600 text-white rounded">Filtrar</button>
+  <a href={`?tipo=${tipo}&sede=${sede}`} class="px-3 py-1 bg-gray-200 text-gray-700 rounded border border-gray-400 hover:bg-gray-300 ml-2">Quitar filtros</a>
     </form>
     <button type="submit" class="px-3 py-1 bg-green-400 text-white rounded" onclick={`import('/src/components/inventario/inventario-modal.js').then(m => m.openNewModal())`}>Nuevo</button>
   </div>
@@ -132,9 +186,66 @@ const totalSubtotalPorTipo = rows.reduce((acc, r) => acc + subtotal(r), 0);
         <th class="border border-gray-300">NOMBRE</th>
         <th class="border border-gray-300">CATEGORIA</th>
         <th class="border border-gray-300">UNIDAD DE MEDIDA</th>
-        <th class="border border-gray-300">CANTIDAD</th>
-        <th class="border border-gray-300">VALOR UNITARIO</th>
-        <th class="border border-gray-300">SUBTOTAL</th>
+        <th class="border border-gray-300">
+          <a href={`?${new URLSearchParams({
+            tipo, sede, search, searchBy, categoria: categoriaFiltro, page: '1',
+            sortBy: 'cantidad', sortDir: sortBy === 'cantidad' && sortDir === 'desc' ? 'asc' : 'desc'
+          }).toString()}`}
+            class="flex items-center gap-1 hover:underline">
+            CANTIDAD
+            <span class="inline-block w-4 h-4 align-middle">
+              {sortBy === 'cantidad' ? (
+                sortDir === 'desc' ? (
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-blue-600"><polyline points="5 9 10 14 15 9"/></svg>
+                ) : (
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-blue-600"><polyline points="5 11 10 6 15 11"/></svg>
+                )
+              ) : (
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-gray-300"><polyline points="5 11 10 6 15 11"/></svg>
+              )}
+            </span>
+          </a>
+        </th>
+        <th class="border border-gray-300">
+          <a href={`?${new URLSearchParams({
+            tipo, sede, search, searchBy, categoria: categoriaFiltro, page: '1',
+            sortBy: 'valor_unitario', sortDir: sortBy === 'valor_unitario' && sortDir === 'desc' ? 'asc' : 'desc'
+          }).toString()}`}
+            class="flex items-center gap-1 hover:underline">
+            VALOR UNITARIO
+            <span class="inline-block w-4 h-4 align-middle">
+              {sortBy === 'valor_unitario' ? (
+                sortDir === 'desc' ? (
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-blue-600"><polyline points="5 9 10 14 15 9"/></svg>
+                ) : (
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-blue-600"><polyline points="5 11 10 6 15 11"/></svg>
+                )
+              ) : (
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-gray-300"><polyline points="5 11 10 6 15 11"/></svg>
+              )}
+            </span>
+          </a>
+        </th>
+        <th class="border border-gray-300">
+          <a href={`?${new URLSearchParams({
+            tipo, sede, search, searchBy, categoria: categoriaFiltro, page: '1',
+            sortBy: 'subtotal', sortDir: sortBy === 'subtotal' && sortDir === 'desc' ? 'asc' : 'desc'
+          }).toString()}`}
+            class="flex items-center gap-1 hover:underline">
+            SUBTOTAL
+            <span class="inline-block w-4 h-4 align-middle">
+              {sortBy === 'subtotal' ? (
+                sortDir === 'desc' ? (
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-blue-600"><polyline points="5 9 10 14 15 9"/></svg>
+                ) : (
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-blue-600"><polyline points="5 11 10 6 15 11"/></svg>
+                )
+              ) : (
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-gray-300"><polyline points="5 11 10 6 15 11"/></svg>
+              )}
+            </span>
+          </a>
+        </th>
         {role === 'admin' && (
           <th colspan="4" class="border border-gray-300">ACCION</th>
         )}
@@ -267,7 +378,7 @@ const totalSubtotalPorTipo = rows.reduce((acc, r) => acc + subtotal(r), 0);
   }
 
 <!-- Modales fuera del contenedor de la tabla -->
-<div id="transfer-modal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 hidden animate-fade-in">
+<div id="transfer-modal" class="fixed inset-0 bg-black/40 items-center justify-center z-50 hidden animate-fade-in">
   <form method="POST" class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg border-2 border-green-400 relative animate-fade-in" onsubmit="import('/src/components/inventario/inventario-modal.js').then(m => m.submitTransferForm(event))">
     <div class="modal-success"></div>
     <h2 class="text-xl font-bold mb-4 text-green-700 text-center">Transferir Inventario</h2>
@@ -292,10 +403,12 @@ const totalSubtotalPorTipo = rows.reduce((acc, r) => acc + subtotal(r), 0);
       <select id="transfer-destino-tipo" name="transfer-destino-tipo" class="border w-full rounded px-2 py-1" required onchange="
         document.getElementById('transfer-almacen-destino').style.display = this.value === 'almacen' ? 'block' : 'none';
         document.getElementById('transfer-centro-costo-destino').style.display = this.value === 'centro_costo' ? 'block' : 'none';
+        document.getElementById('transfer-site').style.display = this.value === 'site' ? 'block' : 'none';
       ">
         <option value="">Seleccione una opción</option>
         <option value="almacen">Almacén</option>
         <option value="centro_costo">Centro de Costo</option>
+        <option value="site">Site</option>
       </select>
     </div>
     <!-- Selección de almacén destino -->
@@ -317,6 +430,59 @@ const totalSubtotalPorTipo = rows.reduce((acc, r) => acc + subtotal(r), 0);
         ))}
       </select>
     </div>
+    <!-- Selección de site destino -->
+    <div class="mb-3" id="transfer-site" style="display:none">
+      <label class="block text-sm font-semibold mb-1">Site destino</label>
+      <select id="transfer-site" name="transfer-site" class="border w-full rounded px-2 py-1">
+        <option value="">Selecciona un site</option>
+        {nombresUnicos.map((nombreUnico, idx) => {
+          const site = sites.find(s => s.nombre === nombreUnico);
+          return site ? (
+            <option value={site.id} data-site={site.nombre}>{site.id} - {site.nombre}</option>
+          ) : null;
+        })}
+      </select>
+    </div>
+
+<div class="mb-3" id="transfer-site-centro-costo" style="display:none">
+  <label class="block text-sm font-semibold mb-1">Centro de Costo asociado</label>
+  <select id="select-centro-costo" name="select-centro-costo" class="border w-full rounded px-2 py-1">
+    <option value="">Selecciona un centro de costo</option>
+    {/* Las opciones se llenarán dinámicamente */}
+  </select>
+</div>
+
+<script type="module">
+  // Suponiendo que tienes sitesData disponible como array de objetos
+  const transferSiteSelect = document.getElementById('transfer-site');
+  const centroCostoDiv = document.getElementById('transfer-site-centro-costo');
+  const centroCostoSelect = document.getElementById('select-centro-costo');
+
+  transferSiteSelect?.addEventListener('change', function () {
+    const selectedSiteId = this.value;
+    const selectedSite = sitesData.find(s => String(s.nombre) === selectedSelectedSite);
+    if (!selectedSite) {
+      centroCostoDiv.style.display = 'none';
+      return;
+    }
+    // Filtra todos los sites con el mismo nombre
+    const sitesMismoNombre = sitesData.filter(s => s.nombre === selectedSite.nombre);
+    // Obtén los cc_origen únicos
+    const ccUnicos = Array.from(new Set(sitesMismoNombre.map(s => s.cc_origen)));
+    if (ccUnicos.length > 1) {
+      centroCostoDiv.style.display = 'block';
+      centroCostoSelect.innerHTML = '<option value=\"\">Selecciona un centro de costo</option>';
+      ccUnicos.forEach(cc => {
+        centroCostoSelect.innerHTML += `<option value=\"${cc}\">${cc}</option>`;
+      });
+    } else {
+      centroCostoDiv.style.display = 'none';
+    }
+  });
+</script>
+
+    
+<!-- Fin selección de site destino -->
     <div class="flex gap-2 justify-end mt-6">
       <button type="button" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400" onclick="import('/src/components/inventario/inventario-modal.js').then(m => m.closeModal('transfer-modal'))">Cancelar</button>
       <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Confirmar traslado</button>
@@ -325,7 +491,7 @@ const totalSubtotalPorTipo = rows.reduce((acc, r) => acc + subtotal(r), 0);
 </div>
 
 <!-- Modal Editar -->
-<div id="edit-modal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 hidden animate-fade-in">
+<div id="edit-modal" class="fixed inset-0 bg-black/40 items-center justify-center z-50 hidden animate-fade-in">
   <form method="POST" class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg border-2 border-blue-400 relative animate-fade-in" onsubmit="import('/src/components/inventario/inventario-modal.js').then(m => m.submitEditForm(event))">
     <div class="modal-success"></div>
     <h2 class="text-xl font-bold mb-4 text-blue-700 text-center">Editar Inventario</h2>
@@ -354,7 +520,7 @@ const totalSubtotalPorTipo = rows.reduce((acc, r) => acc + subtotal(r), 0);
     </div>
     <div class="mb-3">
       <label class="block text-sm font-semibold mb-1">Valor Unitario</label>
-      <input type="number" id="edit-valor_unitario" name="edit-valor_unitario" class="border w-full rounded px-2 py-1" min="0" step="0.01" required />
+      <input type="number" id="edit-valor_unitario" name="edit-valor_unitario" class="border w-full rounded px-2 py-1" min="0" step="0.0001" required />
     </div>
     <div class="flex gap-2 justify-end mt-6">
       <button type="button" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400" onclick="import('/src/components/inventario/inventario-modal.js').then(m => m.closeModal('edit-modal'))">Cancelar</button>
@@ -364,7 +530,7 @@ const totalSubtotalPorTipo = rows.reduce((acc, r) => acc + subtotal(r), 0);
 </div>
 
 <!-- Modal Agregar -->
-<div id="add-modal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 hidden animate-fade-in">
+<div id="add-modal" class="fixed inset-0 bg-black/40 items-center justify-center z-50 hidden animate-fade-in">
   <form method="POST" class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg border-2 border-blue-400 relative animate-fade-in" onsubmit="import('/src/components/inventario/inventario-modal.js').then(m => m.submitAddForm(event))">
     <div class="modal-success"></div>
     <h2 class="text-xl font-bold mb-4 text-blue-700 text-center">Agregar Inventario</h2>
@@ -394,7 +560,7 @@ const totalSubtotalPorTipo = rows.reduce((acc, r) => acc + subtotal(r), 0);
 </div>
 
 <!-- Modal Eliminar -->
-<div id="delete-modal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 hidden animate-fade-in">
+<div id="delete-modal" class="fixed inset-0 bg-black/40 items-center justify-center z-50 hidden animate-fade-in">
   <form method="POST" class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg border-2 border-red-400 relative animate-fade-in" onsubmit="import('/src/components/inventario/inventario-modal.js').then(m => m.submitDeleteForm(event))">
     <div class="modal-success"></div>
     <input type="hidden" id="delete-id" name="delete-id" />
@@ -409,7 +575,7 @@ const totalSubtotalPorTipo = rows.reduce((acc, r) => acc + subtotal(r), 0);
 </div>
 
 <!-- Modal nuevo -->
-<div id= "new-modal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 animate-fade-in hidden">
+<div id= "new-modal" class="fixed inset-0 bg-black/40 items-center justify-center z-50 animate-fade-in hidden">
   <form method="POST" class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg border-2 border-blue-400 relative animate-fade-in" onsubmit="import('/src/components/inventario/inventario-modal.js').then(m => m.submitNewForm(event))">
     <h2 class="text-xl font-bold mb-4 text-blue-700 text-center">Nuevo Inventario</h2>
     <input type="hidden" id="sede" name="sede" value={sede} />
