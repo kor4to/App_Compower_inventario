@@ -5,6 +5,19 @@ const role = Astro.cookies.get('sb-role')?.value ?? '';
 const username = Astro.cookies.get('sb-username')?.value ?? '';
 const currentSede = Astro.url.searchParams.get('sede') || 'surco';
 
+let email = Astro.cookies.get('sb-email')?.value ?? '';
+if (!email) {
+  const accessToken = Astro.cookies.get('sb-access-token')?.value ?? '';
+  if (accessToken) {
+    try {
+      const payload = JSON.parse(Buffer.from(accessToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8'));
+      email = payload?.email ?? payload?.user_metadata?.email ?? '';
+    } catch (e) {
+      // ignore parse error
+    }
+  }
+}
+
 ---
 <html lang="es">
   <head>
@@ -131,6 +144,15 @@ const currentSede = Astro.url.searchParams.get('sede') || 'surco';
                   >
                     <span class="flex items-center gap-2"><span>📤</span> Transferencias</span>
                     <span class="text-sm bg-white text-blue-600 px-2 rounded-full">Nuevo</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="/Module-start/dashboard"
+                    class="hover:text-blue-300 flex items-center gap-2"
+                  >
+                    <span class="flex items-center gap-2"><span>📋</span> Mi Inventario</span>
+                    
                   </a>
                 </li>
               </>

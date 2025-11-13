@@ -10,7 +10,13 @@ export const POST: APIRoute = async ({ request }) => {
       await editCC({ data });
       return new Response("OK");
     } else if (action === "eliminar") {
-      return new Response("No implementado", { status: 400 });
+      const { id } = params;
+      await eliminarCC({ id });
+      return new Response("OK");
+    } else if (action === "nuevo") {
+      const { ...data } = params;
+      await addCC({ data });
+      return new Response("OK");
     } else {
       return new Response("Acción no soportada", { status: 400 });
     }
@@ -45,11 +51,6 @@ export async function editCC({ data }: { data: any }) {
   return true;
 }
 
-export async function deleteCC({ id }: { id: number | string }) {
-  const { error } = await supabase.from("centro_costo").delete().eq("id", id);
-  if (error) throw new Error(error.message);
-  return true;
-}
 
 export async function addCC({ data }: { data: any }) {
   if(data.codigo) data.codigo = data.codigo.toUpperCase();
@@ -58,6 +59,13 @@ export async function addCC({ data }: { data: any }) {
   if(data.proyecto) data.proyecto = data.proyecto.toUpperCase();
   if(data.presupuesto) data.presupuesto = Number(data.presupuesto);
   const { error } = await supabase.from("centro_costo").insert([data]);
+  if (error) throw new Error(error.message);
+  return true;
+}
+
+export async function eliminarCC({ id }: { id: number | string }) {
+  const { error } = await supabase.from("centro_costo").delete().eq("id", id);
+  console.log("Eliminando CC", id);
   if (error) throw new Error(error.message);
   return true;
 }

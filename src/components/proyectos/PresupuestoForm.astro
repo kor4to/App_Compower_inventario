@@ -1,25 +1,14 @@
 ---
 import "../../styles/global.css";
-import { supabase } from "../../lib/supabase/SupabaseClient";
 import PresupuestoList from "./PresupuestoList.astro";
 
-let centrosCostos:any[] = [];
-let loading = true;
-let error = "";
-
-try {
-  const { data, error: err } = await supabase
-    .from("centro_costo")
-    .select("codigo, proyecto")
-    .order("codigo", { ascending: true });
-  if (err) throw err;
-  centrosCostos = data ?? [];
-  loading = false;
-} catch (e) {
-  error = "Error cargando centros de costo";
-  loading = false;
-}
-
+import EditarCC from "./PresupuestoEditar.astro";
+import EliminarCC from "./PresupuestoEliminar.astro";
+import AgregarCC from "./PresupuestoAgregar.astro";
 ---
 
 <PresupuestoList />
+
+<EditarCC />
+<AgregarCC />
+<EliminarCC />

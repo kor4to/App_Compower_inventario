@@ -1,0 +1,16 @@
+---
+import "../../styles/global.css";
+
+
+---
+<div id="delete-modal" class="fixed inset-0 bg-black/40 items-center justify-center z-50 hidden animate-fade-in">
+  <form method="POST" class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg border-2 border-red-400 relative animate-fade-in" onsubmit="import('/src/components/proyectos/centro-costo-modal.js').then(m => m.submitDeleteForm(event))">
+    <div class="modal-success"></div>
+    <input type="hidden" id="delete-id" name="delete-id" />
+    <h2 class="text-xl font-bold mb-4 text-red-700 text-center">¿Seguro que deseas eliminar <span id="delete-nombre" class="font-semibold"></span>?</h2>
+    <div class="flex gap-2 justify-end mt-6">
+      <button type="button" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400" onclick="import('/src/components/proyectos/centro-costo-modal.js').then(m => m.closeModal('delete-modal'))">Cancelar</button>
+      <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Eliminar</button>
+    </div>
+  </form>
+</div>

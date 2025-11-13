@@ -1,28 +1,32 @@
 import { supabase } from '../../lib/supabase/SupabaseClient';
 
-
 export async function getDashboardData() {
   // 1. Valor total de almacén de Cusco
   let valorCusco = 0;
   let valorSurco = 0;
-  const tablasCusco = ['cusco_activo', 'cusco_material', 'cusco_herramienta'];
-  const tablasSurco = ['surco_activo', 'surco_material', 'surco_herramienta'];
+  const tablasCusco = ['inventario'];
+  const tablasSurco = ['inventario'];
+
   for (const tabla of tablasCusco) {
     const { data, error } = await supabase
       .from(tabla)
-      .select('cantidad, valor_unitario');
+      .select('cantidad, valor_unitario')
+      .eq('sede', 'CUSCO');
     if (!error && data) {
       valorCusco += data.reduce((acc, r) => acc + (Number(r.cantidad) * Number(r.valor_unitario)), 0);
     }
   }
+
   for (const tabla of tablasSurco) {
     const { data, error } = await supabase
       .from(tabla)
-      .select('cantidad, valor_unitario');
+      .select('cantidad, valor_unitario')
+      .eq('sede', 'SURCO');
     if (!error && data) {
       valorSurco += data.reduce((acc, r) => acc + (Number(r.cantidad) * Number(r.valor_unitario)), 0);
     }
   }
+  
   const almacenValores = { cusco: valorCusco, surco: valorSurco };
 
   // 2. Total de transferencias realizadas (todas las filas de kardex)

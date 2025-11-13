@@ -36,11 +36,14 @@ export async function buscarItemPorCodigo({
   sedeDestino: Sede;
   codigo: string;
 }) {
-  const tabla = tableName(tipo, sedeDestino);
+  const tipo1 = tipo.toUpperCase();
+  const sede = sedeDestino.toUpperCase();
   const { data, error } = await supabase
-    .from(tabla)
+    .from("inventario")
     .select("*")
     .eq("codigo", codigo)
+    .eq("sede", sede)
+    .eq("tipo", tipo1)
     .single();
 
   if (error && error.code !== "PGRST116") throw new Error(error.message);
@@ -71,8 +74,9 @@ export async function eliminarItem({
   sede: Sede;
   codigo: string;
 }) {
-  const tabla = tableName(tipo, sede);
-  const { error } = await supabase.from(tabla).delete().eq("codigo", codigo);
+  const sede1 = sede.toUpperCase();
+  const tipo1 = tipo.toUpperCase();
+  const { error } = await supabase.from("inventario").delete().eq("codigo", codigo).eq("sede", sede1).eq("tipo", tipo1);
   if (error) throw new Error(error.message);
   return true;
 }
@@ -120,16 +124,19 @@ export async function sumarOAgregarItem({
   data: any;
   cantidad: number;
 }) {
-  const tabla = tableName(tipo, sedeDestino);
+  const tipo1 = tipo.toUpperCase();
+  const sedeD = sedeDestino.toUpperCase();
   const item = await buscarItemPorCodigo({ tipo, sedeDestino, codigo });
   if (item) {
     // Sumar cantidad
     const nuevaCantidad = Number(item.cantidad) + Number(cantidad);
    
     const { error } = await supabase
-    .from(tabla)
+    .from("inventario")
     .update({ cantidad: nuevaCantidad })
-    .eq("codigo", codigo);
+    .eq("codigo", codigo)
+    .eq("sede", sedeD)
+    .eq("tipo", tipo1);
     console.log("item: ",item);
     if (error) {
       console.log("Error al actualizar item:", error);
@@ -138,9 +145,10 @@ export async function sumarOAgregarItem({
   } else {
     // Agregar nuevo
     const { error } = await supabase
-      .from(tabla)
-      .insert([{ ...data, codigo, cantidad }]);
-    const detalle= "Transferencia de " + (data?.codigo ?? "N/A") + " desde " + sedeOrigen + " hasta " + sedeDestino;
+      .from("inventario")
+      .insert([{ ...data, codigo, cantidad, sede: sedeD, tipo: tipo1 }]);
+    console.log("data a insertar: ",{ ...data, codigo, cantidad, sede: sedeD, tipo: tipo1 });
+
     console.log("data: ", data)
     if (error) {
       console.log("Error al insertar item:", error);
@@ -194,12 +202,16 @@ export async function transferirItem({
   if (cantidadActual === cantidad) {
     await eliminarItem({ tipo, sede: sedeOrigen, codigo });
   } else {
+    const tipo1 = tipo.toUpperCase();
+    const sedeO = sedeOrigen.toUpperCase();
     const tabla = tableName(tipo, sedeOrigen);
     const nuevaCantidad = cantidadActual - cantidad;
     const { error } = await supabase
-      .from(tabla)
+      .from("inventario")
       .update({ cantidad: nuevaCantidad })
-      .eq("codigo", codigo);
+      .eq("codigo", codigo)
+      .eq("sede", sedeO)
+      .eq("tipo", tipo1);
 
     if (error) throw new Error(error.message);
   }

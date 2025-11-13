@@ -10,8 +10,6 @@ const {
   proyecto,
   presupuesto,
   estado,
-  onDelete,
-  onEdit,
 } = Astro.props;
 
 let consumido = 0;
@@ -89,7 +87,7 @@ disponible = presupuesto - consumido;
     <button
       class="text-red-600 hover:underline"
       type="button"
-      onclick={`window.dispatchEvent(new CustomEvent('presupuesto-delete',{detail:'${codigo}'}))`}>Eliminar</button
+      onclick={`import('/src/components/proyectos/centro-costo-modal.js').then(m => m.openDeleteModal('${id}'))`}>Eliminar</button
     >
   </td>
 </tr>

@@ -1,0 +1,45 @@
+---
+import "../../styles/global.css";
+---
+
+<div id="new-cc-modal" class="fixed inset-0 bg-black/40 items-center justify-center z-50 hidden animate-fade-in">
+  <form method="POST" class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg border-2 border-blue-400 relative animate-fade-in flex flex-col items-center" onsubmit="import('/src/components/proyectos/centro-costo-modal.js').then(m => m.submitNewForm(event))">
+    <div class="modal-success"></div>
+    <h2 class="text-xl font-bold mb-4 text-blue-700 text-center">Agregar Centro de Costo</h2>
+    <input type="hidden" id="new-id" name="new-id"/>
+    <div class="mb-3 w-80 mx-auto">
+      <label class="block text-sm font-semibold mb-1">Código</label>
+      <input type="text" id="new-codigo" name="new-codigo" class="border rounded px-2 py-1 focus:ring-2 focus:ring-blue-300 w-full" required />
+    </div>
+    <div class="mb-3 w-80 mx-auto">
+      <label class="block text-sm font-semibold mb-1">Cliente</label>
+      <input type="text" id="new-cliente" name="new-cliente" class="border rounded px-2 py-1 focus:ring-2 focus:ring-blue-300 w-full" required />
+    </div>
+    <div class="mb-3 w-80 mx-auto">
+      <label class="block text-sm font-semibold mb-1">Coordinador</label>
+      <input type="text" id="new-coordinador" name="new-coordinador" class="border rounded px-2 py-1 w-full" />
+    </div>
+    <div class="mb-3 w-80 mx-auto">
+      <label class="block text-sm font-semibold mb-1">Proyecto</label>
+      <input type="text" id="new-proyecto" name="new-proyecto" class="border rounded px-2 py-1 w-full" />
+    </div>
+    <div class="mb-3 w-80 mx-auto">
+      <label class="block text-sm font-semibold mb-1">Presupuesto</label>
+      <input type="number" id="new-presupuesto" name="new-presupuesto" class="border rounded px-2 py-1 w-full" min="0" step="0.1" required />
+    </div>
+    <div class="flex gap-2 justify-end mt-6">
+      <button type="button" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400" onclick="import('/src/components/proyectos/centro-costo-modal.js').then(m => m.closeModal('new-cc-modal'))">Cancelar</button>
+      <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Guardar</button>
+    </div>
+  </form>
+</div>
+
+<style>
+@keyframes fade-in {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-fade-in {
+  animation: fade-in 0.3s ease;
+}
+</style>

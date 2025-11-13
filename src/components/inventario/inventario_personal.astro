@@ -1,0 +1,26 @@
+---
+import '../../styles/global.css';
+
+const username = Astro.cookies.get('sb-username')?.value ?? '';
+---
+
+<div class="overflow-x-auto rounded-lg border">
+  <table class="border-collapse border border-gray-300 w-full">
+    <thead>
+      <tr>
+        <th class="border border-gray-300">CÓDIGO</th>
+        <th class="border border-gray-300">NOMBRE</th>
+        <th class="border border-gray-300">CATEGORÍA</th>
+        <th class="border border-gray-300">UNIDAD DE MEDIDA</th>
+        <th class="border border-gray-300">CANTIDAD</th>
+        <th class="border border-gray-300">VALOR UNITARIO</th>
+        <th class="border border-gray-300">SUBTOTAL</th>
+        <th class="border border-gray-300">ACCIÓN</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {username}
+    </tbody>
+  </table>
+</div>

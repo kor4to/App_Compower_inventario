@@ -1,9 +1,10 @@
 ---
 import "../../styles/global.css";
-import { supabase } from "../../lib/supabase/SupabaseClient";
 import PresupuestoListItem from "./PresupuestoListItem.astro";
 import { listCC } from "../../pages/api/proyectos/presupuesto.ts";
 import EditarCC from "./PresupuestoEditar.astro";
+import EliminarCC from "./PresupuestoEliminar.astro";
+import AgregarCC from "./PresupuestoAgregar.astro";
 let presupuestos: any[] = [];
 let error = "";
 
@@ -16,7 +17,15 @@ try {
 ---
 
 <div class="mx-auto mt-8 bg-white p-6 rounded-xl shadow border">
-  <h2 class="text-lg font-bold mb-4 text-blue-700">Presupuestos asignados</h2>
+  <div class="flex justify-between items-center mb-4"></div>
+  <div class="flex justify-between items-center mb-4">
+    <h2 class="text-lg font-bold text-blue-700">Presupuestos asignados</h2>
+    <button
+    onclick={`import('/src/components/proyectos/centro-costo-modal.js').then(m => m.openNewModal({ }))`} 
+      class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded transition duration-200 text-sm whitespace-nowrap"
+    >  
+    Agregar Centro de Costo</button>
+  </div>
   {
     error ? (
       <div class="text-red-600">{error}</div>
@@ -51,7 +60,6 @@ try {
           ))}
         </tbody>
       </table>
-      <EditarCC />
     )
   }
 </div>

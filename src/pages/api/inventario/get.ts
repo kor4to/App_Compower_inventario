@@ -12,7 +12,9 @@ export function tableName(tipo: Tipo, sede: Sede): string {
 
 export async function listInventario(opts: { tipo: Tipo, sede: Sede }) {
     const table = tableName(opts.tipo, opts.sede);
-    const { data, error } = await supabase.from(table).select("*").order("codigo", { ascending: true });
+    const sede = opts.sede.toUpperCase();
+    const tipo = opts.tipo.toUpperCase();
+    const { data, error } = await supabase.from("inventario").select("*").eq("sede", sede).eq("tipo", tipo).order("codigo", { ascending: true });
     if(error) throw new Error(error.message);
     return data ?? [];
 }
